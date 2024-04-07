@@ -13,6 +13,6 @@ contract esODYToken is ERC20MinterPauserPermitUpgradeable {
      */
     function initialize2(address _ONDEFYDAO) public initializer {
         super.initialize("Escrowed ODY", "esODY");
-        _setupRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
+        _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
 }

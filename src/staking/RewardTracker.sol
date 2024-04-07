@@ -2,17 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IRewardDistributor.sol";
 import "./interfaces/IRewardTracker.sol";
 import "../access/Governable.sol";
 
 contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
@@ -151,7 +150,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
             return true;
         }
 
-        uint256 nextAllowance = allowances[_sender][msg.sender].sub(_amount, "RewardTracker: transfer amount exceeds allowance");
+        uint256 nextAllowance = allowances[_sender][msg.sender] - _amount; // "RewardTracker: transfer amount exceeds allowance"
         _approve(_sender, msg.sender, nextAllowance);
         _transfer(_sender, _recipient, _amount);
         return true;
@@ -180,10 +179,11 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         if (boostedStakedAmount == 0) {
             return claimableReward[_account];
         }
-        uint256 pendingRewards = IRewardDistributor(distributor).pendingRewards().mul(PRECISION);
-        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken.add(pendingRewards.div(boostedTotalSupply));
-        return claimableReward[_account].add(
-            boostedStakedAmount.mul(nextCumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[_account])).div(PRECISION));
+        uint256 pendingRewards = Math.mulDiv(IRewardDistributor(distributor).pendingRewards(), PRECISION, boostedTotalSupply);
+        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken + pendingRewards;
+
+        uint256 rewards = Math.mulDiv(boostedStakedAmount, nextCumulativeRewardPerToken - previousCumulatedRewardPerToken[_account], PRECISION);
+        return claimableReward[_account] + rewards;
     }
 
     function rewardToken() public view returns (address) {
@@ -196,8 +196,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         _updateRewards(_account);
 
         rewardBoostsBasisPoints[_account] = _rewardBoostBasisPoints;
-        uint256 nextBoostedStakedAmount = stakedAmounts[_account].mul(BASIS_POINTS_DIVISOR.add(_rewardBoostBasisPoints)).div(BASIS_POINTS_DIVISOR);
-        boostedTotalSupply = boostedTotalSupply.sub(boostedStakedAmounts[_account]).add(nextBoostedStakedAmount);
+        uint256 nextBoostedStakedAmount = Math.mulDiv(stakedAmounts[_account], BASIS_POINTS_DIVISOR + _rewardBoostBasisPoints, BASIS_POINTS_DIVISOR);
+        boostedTotalSupply = boostedTotalSupply - boostedStakedAmounts[_account] + nextBoostedStakedAmount;
         boostedStakedAmounts[_account] = nextBoostedStakedAmount;
     }
 
@@ -218,9 +218,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     function _mint(address _account, uint256 _amount) internal {
         require(_account != address(0), "RewardTracker: mint to the zero address");
 
-        totalSupply = totalSupply.add(_amount);
-        boostedTotalSupply = boostedTotalSupply.add(_amount.mul(BASIS_POINTS_DIVISOR.add(rewardBoostsBasisPoints[_account])).div(BASIS_POINTS_DIVISOR));
-        balances[_account] = balances[_account].add(_amount);
+        totalSupply = totalSupply + _amount;
+        boostedTotalSupply = boostedTotalSupply + (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
+        balances[_account] = balances[_account] + _amount;
 
         emit Transfer(address(0), _account, _amount);
     }
@@ -228,9 +228,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     function _burn(address _account, uint256 _amount) internal {
         require(_account != address(0), "RewardTracker: burn from the zero address");
 
-        balances[_account] = balances[_account].sub(_amount, "RewardTracker: burn amount exceeds balance");
-        totalSupply = totalSupply.sub(_amount);
-        boostedTotalSupply = boostedTotalSupply.sub(_amount.mul(BASIS_POINTS_DIVISOR.add(rewardBoostsBasisPoints[_account])).div(BASIS_POINTS_DIVISOR));
+        balances[_account] = balances[_account] - _amount;// "RewardTracker: burn amount exceeds balance"
+        totalSupply = totalSupply - _amount;
+        boostedTotalSupply = boostedTotalSupply - (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
 
         emit Transfer(_account, address(0), _amount);
     }
@@ -241,8 +241,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         if (inPrivateTransferMode) { _validateHandler(); }
 
-        balances[_sender] = balances[_sender].sub(_amount, "RewardTracker: transfer amount exceeds balance");
-        balances[_recipient] = balances[_recipient].add(_amount);
+        balances[_sender] = balances[_sender] - _amount; //"RewardTracker: transfer amount exceeds balance");
+        balances[_recipient] = balances[_recipient] + _amount;
 
         emit Transfer(_sender, _recipient,_amount);
     }
@@ -268,11 +268,11 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         _updateRewards(_account);
 
-        stakedAmounts[_account] = stakedAmounts[_account].add(_amount);
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account].add(_amount.mul(BASIS_POINTS_DIVISOR.add(rewardBoostsBasisPoints[_account])).div(BASIS_POINTS_DIVISOR));
+        stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
         
-        depositBalances[_account][_depositToken] = depositBalances[_account][_depositToken].add(_amount);
-        totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken].add(_amount);
+        depositBalances[_account][_depositToken] = depositBalances[_account][_depositToken] + _amount;
+        totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] + _amount;
 
         _mint(_account, _amount);
     }
@@ -286,13 +286,13 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         uint256 stakedAmount = stakedAmounts[_account];
         require(stakedAmounts[_account] >= _amount, "RewardTracker: _amount exceeds stakedAmount");
 
-        stakedAmounts[_account] = stakedAmount.sub(_amount);
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account].sub(_amount.mul(BASIS_POINTS_DIVISOR.add(rewardBoostsBasisPoints[_account])).div(BASIS_POINTS_DIVISOR));
+        stakedAmounts[_account] = stakedAmount - _amount;
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
 
         uint256 depositBalance = depositBalances[_account][_depositToken];
         require(depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
-        depositBalances[_account][_depositToken] = depositBalance.sub(_amount);
-        totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken].sub(_amount);
+        depositBalances[_account][_depositToken] = depositBalance - _amount;
+        totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] - _amount;
 
         _burn(_account, _amount);
         IERC20(_depositToken).safeTransfer(_receiver, _amount);
@@ -303,7 +303,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         uint256 _cumulativeRewardPerToken = cumulativeRewardPerToken;
         if (boostedTotalSupply > 0 && blockReward > 0) {
-            _cumulativeRewardPerToken = _cumulativeRewardPerToken.add(blockReward.mul(PRECISION).div(boostedTotalSupply));
+            _cumulativeRewardPerToken = _cumulativeRewardPerToken + Math.mulDiv(blockReward, PRECISION, boostedTotalSupply);
             cumulativeRewardPerToken = _cumulativeRewardPerToken;
         }
 
@@ -315,14 +315,14 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         if (_account != address(0)) {
             uint256 boostedStakedAmount = boostedStakedAmounts[_account];
-            uint256 accountReward = boostedStakedAmount.mul(_cumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[_account])).div(PRECISION);
-            uint256 _claimableReward = claimableReward[_account].add(accountReward);
+            uint256 accountReward = Math.mulDiv(boostedStakedAmount, (_cumulativeRewardPerToken - previousCumulatedRewardPerToken[_account]), PRECISION);
+            uint256 _claimableReward = claimableReward[_account] + accountReward;
 
             claimableReward[_account] = _claimableReward;
             previousCumulatedRewardPerToken[_account] = _cumulativeRewardPerToken;
 
             if (_claimableReward > 0 && boostedStakedAmounts[_account] > 0) {
-                uint256 nextCumulativeReward = cumulativeRewards[_account].add(accountReward);
+                uint256 nextCumulativeReward = cumulativeRewards[_account] + accountReward;
 
                 cumulativeRewards[_account] = nextCumulativeReward;
             }
