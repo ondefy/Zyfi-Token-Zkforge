@@ -3,11 +3,13 @@ pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ODYToken} from "../src/ody/ODYToken.sol";
 
-contract CounterScript is Script {
+contract ZfyScript is Script {
     address TEAM_ADDRESS;
     address DEPLOYER_ADDRESS;
+    address PROXY;
 
     function setUp() public {
         TEAM_ADDRESS = vm.envAddress("TEAM_ADDRESS");
@@ -17,12 +19,16 @@ contract CounterScript is Script {
     }
 
     function run() public {
+        
         vm.broadcast();
-        //TODO
-        address proxy = Upgrades.deployBeacon(
-        "ODYToken.sol",
-        TEAM_ADDRESS,
-        abi.encodeCall(ODYToken.initialize, ("arguments for the initialize function"))
-        );
+        //TODO: fix the deployement via openzeppelin Upgrades
+        // address proxy = Upgrades.deployUUPSProxy(
+        // "ODYToken.sol",
+        // abi.encodeCall(ODYToken.initialize2, (TEAM_ADDRESS)));
+
+        // In the meantime, unsafe deployment:
+        address ondefyTokenImplementation = address(new ODYToken());
+        PROXY = address(new ERC1967Proxy(ondefyTokenImplementation, abi.encodeCall(ODYToken.initialize2, (TEAM_ADDRESS))));
+        vm.stopBroadcast();
     }
 }

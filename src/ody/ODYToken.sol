@@ -15,4 +15,6 @@ contract ODYToken is ERC20MinterPauserPermitUpgradeable {
         super.initialize("Ondefy Token", "ODY");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
+
+    
 }
