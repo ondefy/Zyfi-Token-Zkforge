@@ -57,3 +57,4 @@ Once deployed, interact with the contracts using appropriate methods provided by
 ## Contributors
 
 - L0GYKAL
+- Previously, Clément
