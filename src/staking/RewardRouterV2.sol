@@ -15,7 +15,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
 
     bool public isInitialized;
 
-    address public ody;
+    address public zyfi;
     address public esOdy;
 
     address public stakedOdyTracker;
@@ -36,7 +36,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         require(!isInitialized, "RewardRouter: already initialized");
         isInitialized = true;
 
-        ody = _ody;
+        zyfi = _ody;
         esOdy = _esOdy;
 
         stakedOdyTracker = _stakedOdyTracker;
@@ -50,18 +50,18 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     function batchStakeOdyForAccount(address[] memory _accounts, uint256[] memory _amounts) external nonReentrant onlyGov {
-        address _ody = ody;
+        address _ody = zyfi;
         for (uint256 i = 0; i < _accounts.length; i++) {
             _stakeOdy(msg.sender, _accounts[i], _ody, _amounts[i]);
         }
     }
 
     function stakeOdyForAccount(address _account, uint256 _amount) external nonReentrant onlyGov {
-        _stakeOdy(msg.sender, _account, ody, _amount);
+        _stakeOdy(msg.sender, _account, zyfi, _amount);
     }
 
     function stakeOdy(uint256 _amount) external nonReentrant {
-        _stakeOdy(msg.sender, msg.sender, ody, _amount);
+        _stakeOdy(msg.sender, msg.sender, zyfi, _amount);
     }
 
     function stakeEsOdy(uint256 _amount) external nonReentrant {
@@ -69,7 +69,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     function unstakeOdy(uint256 _amount) external nonReentrant {
-        _unstakeOdy(msg.sender, ody, _amount);
+        _unstakeOdy(msg.sender, zyfi, _amount);
     }
 
     function unstakeEsOdy(uint256 _amount) external nonReentrant {
@@ -104,7 +104,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         }
 
         if (_shouldStakeOdy && odyAmount > 0) {
-            _stakeOdy(account, account, ody, odyAmount);
+            _stakeOdy(account, account, zyfi, odyAmount);
         }
 
         uint256 esOdyAmount = 0;
@@ -145,10 +145,10 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         _validateReceiver(receiver);
         _compound(_sender);
 
-        uint256 stakedOdy = IRewardTracker(stakedOdyTracker).depositBalances(_sender, ody);
+        uint256 stakedOdy = IRewardTracker(stakedOdyTracker).depositBalances(_sender, zyfi);
         if (stakedOdy > 0) {
-            _unstakeOdy(_sender, ody, stakedOdy);
-            _stakeOdy(_sender, receiver, ody, stakedOdy);
+            _unstakeOdy(_sender, zyfi, stakedOdy);
+            _stakeOdy(_sender, receiver, zyfi, stakedOdy);
         }
 
         uint256 stakedEsOdy = IRewardTracker(stakedOdyTracker).depositBalances(_sender, esOdy);

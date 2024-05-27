@@ -49,7 +49,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     event Claim(address receiver, uint256 amount);
 
-    constructor(string memory _name, string memory _symbol) {
+    constructor(string memory _name, string memory _symbol) Governable() { // TODO: does it work without "Governable()"?
         name = _name;
         symbol = _symbol;
     }

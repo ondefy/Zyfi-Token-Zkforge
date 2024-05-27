@@ -6,13 +6,13 @@ import "../tokens/ERC20MinterPauserPermitUpgradeable.sol";
 /**
  * @notice esODY token contract
  */
-contract esODYToken is ERC20MinterPauserPermitUpgradeable {
+contract esZYFIToken is ERC20MinterPauserPermitUpgradeable {
     /**
      * @notice Intializer
      * @param _ONDEFYDAO the address of the owner
      */
     function initialize2(address _ONDEFYDAO) public initializer {
-        super.initialize("Escrowed ODY", "esODY");
+        super.initialize("Escrowed ZYFI", "esODY");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
 }
