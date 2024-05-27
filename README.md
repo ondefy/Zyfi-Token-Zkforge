@@ -1,44 +1,44 @@
-# Ondefy (ODY) Solidity Project
+# Ondefy (ZYFI) Solidity Project
 
 ## Overview
 
-This project involves the development of Solidity contracts to implement the tokenomics of Ondefy (ODY). The contracts are built using Foundry and are intended for deployment on the ZkSync network. The primary contracts developed in this project are:
+This project involves the development of Solidity contracts to implement the tokenomics of Ondefy (ZYFI). The contracts are built using Foundry and are intended for deployment on the ZkSync network. The primary contracts developed in this project are:
 
-1. **Staking Contract for ODY Token**
-   - Allows users to stake ODY tokens.
-   - Supports the minting of a non-transferable stODY token.
-   - Enables the distribution of ODY rewards and yield in any ERC20 token.
+1. **Staking Contract for ZYFI Token**
+   - Allows users to stake ZYFI tokens.
+   - Supports the minting of a non-transferable stZFY token.
+   - Enables the distribution of ZYFI rewards and yield in any ERC20 token.
    - Implements a cooldown period for users wishing to withdraw from the staking contract.
 
 2. **Escrowed Token Contract**
-   - Creates an escrowed token (esODY) that can be minted from ODY by the team.
-   - Implements an "airdrop" mechanism to distribute esODY to any address.
+   - Creates an escrowed token (esZFY) that can be minted from ZYFI by the team.
+   - Implements an "airdrop" mechanism to distribute esZFY to any address.
    - Escrowed tokens behave similarly to staked tokens but remain locked until the user triggers unvesting.
-   - Unescrowing/unvesting results in burning esODY and distributing ODY tokens over a 6-month period.
+   - Unescrowing/unvesting results in burning esZFY and distributing ZYFI tokens over a 6-month period.
 
 ## Contract Details
 
 ### Staking Contract (Staking.sol)
 
-The Staking contract facilitates staking of ODY tokens and provides functionality for managing staked tokens, rewards, and cooldown periods for withdrawals.
+The Staking contract facilitates staking of ZYFI tokens and provides functionality for managing staked tokens, rewards, and cooldown periods for withdrawals.
 
 Key Features:
 
-- Staking ODY tokens.
-- Minting stODY tokens.
+- Staking ZYFI tokens.
+- Minting stZFY tokens.
 - Distributing rewards in any ERC20 token.
 - Implementing a cooldown period for withdrawals.
 
 ### Escrowed Token Contract (EscrowedToken.sol)
 
-The Escrowed Token contract manages the creation and distribution of esODY tokens, which are minted from ODY tokens and locked until unvesting is triggered.
+The Escrowed Token contract manages the creation and distribution of esZFY tokens, which are minted from ZYFI tokens and locked until unvesting is triggered.
 
 Key Features:
 
-- Creating and minting esODY tokens from ODY.
-- Airdropping esODY tokens to any address.
+- Creating and minting esZFY tokens from ZYFI.
+- Airdropping esZFY tokens to any address.
 - Locking of escrowed tokens until unvesting is initiated.
-- Burning esODY tokens and distributing ODY tokens over a 6-month period upon unvesting.
+- Burning esZFY tokens and distributing ZYFI tokens over a 6-month period upon unvesting.
 
 ## Deployment
 
