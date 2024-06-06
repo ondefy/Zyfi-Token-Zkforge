@@ -40,10 +40,17 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
     mapping (address => uint256) public override bonusRewards;
 
     mapping (address => bool) public isHandler;
+    mapping (address => bool) public isWhitelistedSender;
+    mapping (address => mapping (address => uint256)) public allowances;
 
     event Claim(address receiver, uint256 amount);
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 claimedAmount, uint256 balance);
+
+    modifier enforceIsWhitelistedSender() {
+        require(isWhitelistedSender[msg.sender], "Only whitelisted senders");
+        _;
+    }
 
     constructor (
         string memory _name,
@@ -70,6 +77,10 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
     function setHandler(address _handler, bool _isActive) external onlyGov {
         isHandler[_handler] = _isActive;
+    }
+
+    function setIsWhitelistedSender(address _address, bool _isActive) external onlyGov {
+        isWhitelistedSender[_address] = _isActive;
     }
 
     function setHasMaxVestableAmount(bool _hasMaxVestableAmount) external onlyGov {
@@ -183,24 +194,27 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         return balances[_account];
     }
 
-    // empty implementation, tokens are non-transferrable
-    function transfer(address /* recipient */, uint256 /* amount */) public pure override returns (bool) {
-        revert("Vester: non-transferrable");
+    function allowance(address _owner, address _spender) public view virtual override returns (uint256) {
+        return allowances[_owner][_spender];
     }
 
-    // empty implementation, tokens are non-transferrable
-    function allowance(address /* owner */, address /* spender */) public view virtual override returns (uint256) {
-        return 0;
+    function approve(address _spender, uint256 _amount) public virtual override enforceIsWhitelistedSender returns (bool) {
+        _approve(msg.sender, _spender, _amount);
+        return true;
     }
 
-    // empty implementation, tokens are non-transferrable
-    function approve(address /* spender */, uint256 /* amount */) public virtual override returns (bool) {
-        revert("Vester: non-transferrable");
+    function transfer(address _recipient, uint256 _amount) public virtual override enforceIsWhitelistedSender returns (bool) {
+        _transfer(msg.sender, _recipient, _amount);
+        return true;
     }
 
-    // empty implementation, tokens are non-transferrable
-    function transferFrom(address /* sender */, address /* recipient */, uint256 /* amount */) public virtual override returns (bool) {
-        revert("Vester: non-transferrable");
+    function transferFrom(address _sender, address _recipient, uint256 _amount) public virtual override enforceIsWhitelistedSender returns (bool) {
+        uint256 _allowance = allowances[_sender][msg.sender];
+        require(_amount <= _allowance, "Transfer amount exceeds allowance");
+        uint256 _nextAllowance = _allowance - _amount;
+        _approve(_sender, msg.sender, _nextAllowance);
+        _transfer(_sender, _recipient, _amount);
+        return true;
     }
 
     function getVestedAmount(address _account) public override view returns (uint256) {
@@ -286,5 +300,26 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
     function _validateHandler() private view {
         require(isHandler[msg.sender], "Vester: forbidden");
+    }
+
+    function _transfer(address _sender, address _recipient, uint256 _amount) private {
+        require(_sender != address(0), "Transfer from the zero address");
+        require(_recipient != address(0), "Transfer to the zero address");
+        uint256 _balance = balances[_sender];
+        require(_amount <= _balance, "Transfer amount exceeds balance");
+        
+        balances[_sender] = _balance - _amount;
+        balances[_recipient] = balances[_recipient] + _amount;
+
+        emit Transfer(_sender, _recipient,_amount);
+    }
+
+    function _approve(address _owner, address _spender, uint256 _amount) private {
+        require(_owner != address(0), "Approve from the zero address");
+        require(_spender != address(0), "Approve to the zero address");
+
+        allowances[_owner][_spender] = _amount;
+
+        emit Approval(_owner, _spender, _amount);
     }
 }
