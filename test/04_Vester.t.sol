@@ -11,13 +11,19 @@ contract Vester_Tester is Test {
     address TEAM_ADDRESS = makeAddr("TEAM_ADDRESS");
     address DEPLOYER_ADDRESS = makeAddr("DEPLOYER_ADDRESS");
     address USER1 = makeAddr("USER1");
+    address USER2 = makeAddr("USER2");
+    address USER3 = makeAddr("USER3");
+
     ZYFIToken zyfiToken;
     esZYFIToken esZyfiToken;
     RewardTracker rewardTracker;
+
     ZYFI_test zifyDeployer = new ZYFI_test();
     esZYFI_test esZifyDeployer = new esZYFI_test();
+
     address[] depositTokens;
     RewardTracker_Tester rewardTrackerDeployer = new RewardTracker_Tester();
+
     Vester vester;
 
     function setUp() public {
@@ -94,5 +100,62 @@ contract Vester_Tester is Test {
         // vester.deposit(sumRewards);
         // vm.stopPrank();
         // assertEq(vester.balanceOf(USER1), 2 ether); 
+    }
+
+    function test_transfer_whitelist() public setGov(TEAM_ADDRESS) {
+        uint256 amount = 1 ether;
+        // mint to user1
+        deal(address(esZyfiToken), USER1, amount);
+        // disable max vestable amount
+        vm.prank(TEAM_ADDRESS);
+        vester.setHasMaxVestableAmount(false);
+        // user1 deposits into vesting contract
+        vm.startPrank(USER1);
+        esZyfiToken.approve(address(vester), amount);
+        vester.deposit(amount);
+        // user1 tries to transfer, expect revert
+        vm.expectRevert();
+        vester.transfer(USER2, amount);
+        vm.stopPrank();
+        // whitelist user1
+        vm.prank(TEAM_ADDRESS);
+        vester.setIsWhitelistedSender(USER1, true);
+        vm.startPrank(USER1);
+        // user1 tries to transfer again, expect success
+        vester.transfer(USER2, amount);
+        vm.stopPrank();
+        assertEq(vester.balanceOf(USER1), 0); 
+        assertEq(vester.balanceOf(USER2), amount); 
+    }
+    
+    function test_transferfrom_whitelist() public setGov(TEAM_ADDRESS) {
+        // disable max vestable amount & whitelist user1
+        vm.startPrank(TEAM_ADDRESS);
+        vester.setHasMaxVestableAmount(false);
+        vester.setIsWhitelistedSender(USER1, true);
+        vm.stopPrank();
+        // mint to user1
+        uint256 amount = 1 ether;
+        deal(address(esZyfiToken), USER1, amount);
+        // user1 deposits into vesting contract
+        vm.startPrank(USER1);
+        esZyfiToken.approve(address(vester), amount);
+        vester.deposit(amount);
+        // user1 approves user2
+        vester.approve(USER2, amount);
+        vm.stopPrank();
+        // user2 tries to transfer user1's funds, expect revert
+        vm.prank(USER2);
+        vm.expectRevert();
+        vester.transferFrom(USER1, USER3, amount);
+        // user2 gets whitelisted for transfers
+        vm.prank(TEAM_ADDRESS);
+        vester.setIsWhitelistedSender(USER2, true);
+        // user2 tries to transfer user1's funds again, expect success
+        vm.prank(USER2);
+        vester.transferFrom(USER1, USER3, amount);
+        assertEq(vester.balanceOf(USER1), 0); 
+        assertEq(vester.balanceOf(USER2), 0); 
+        assertEq(vester.balanceOf(USER3), amount); 
     }
 }
