@@ -47,7 +47,7 @@ The architecture previous architecture of ODY tokenomics can be summarized in th
  
 ### New Contract details
 - `Vester` : Converts stZFI into ZFI (forked from GMX's `Vester`).
-- `RewardTracker` : Manages staking and convert ZFI to stZFI. Comes under the form of ERC20 token (forked from GMX's `RewardTracker`).
+- `RewardTracker` : Manages staking and convert ZFI to stZFI. User cannot convert back. Comes under the form of ERC20 token (forked from GMX's `RewardTracker`).
 - `RewardDistributor` : Distributes necessary funds to `RewardTracker` for staking rewards (forked from GMX's `RewardDistributor`).
 - `RewardRouter` : Pilots `RewardTracker` and `Vester` contracts for handling of rewards and full account transfer. (forked from GMX's `RewardRouterV2`).
 - `ZFIToken` : ZFI token, inherits from `ERC20MinterPauserPermitUpgradeable`.
@@ -61,6 +61,10 @@ The following differences should be noted compared with GMX architecture :
 - Reward boost feature was included in RewardTracker contract. This allows to set a boost percentage individually for any account, resulting in a higher attribution of their esODY staking rewards.
 - Vesting duration is set to 6 months instead of 1 year.
 - While the actual GMX and esGMX contracts inherit from a MintableBaseToken contract, ODY and esODY contracts inherit from Openzeppelin Library (supporting Role-based access control, Pausing, Minting, Burning and Permit signing) with a few modifications in order to facilitate their interaction with vesting/staking contracts.
+
+New changes:
+- The RewardTracker "unstake" function has been removed
+- The Vester can unstake stZFI for the user after the 6 months period
 
 ## Deployment
 
