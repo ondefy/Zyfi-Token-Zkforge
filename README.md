@@ -40,6 +40,28 @@ Key Features:
 - Locking of escrowed tokens until unvesting is initiated.
 - Burning esZFY tokens and distributing ZYFI tokens over a 6-month period upon unvesting.
 
+### Architecture
+The architecture previous architecture of ODY tokenomics can be summarized in the following figure :
+
+![](assets/ody-architecture.svg)  
+ 
+### New Contract details
+- `Vester` : Converts stZFI into ZFI (forked from GMX's `Vester`).
+- `RewardTracker` : Manages staking and convert ZFI to stZFI. Comes under the form of ERC20 token (forked from GMX's `RewardTracker`).
+- `RewardDistributor` : Distributes necessary funds to `RewardTracker` for staking rewards (forked from GMX's `RewardDistributor`).
+- `RewardRouter` : Pilots `RewardTracker` and `Vester` contracts for handling of rewards and full account transfer. (forked from GMX's `RewardRouterV2`).
+- `ZFIToken` : ZFI token, inherits from `ERC20MinterPauserPermitUpgradeable`.
+
+### Notable changes compared to GMX
+
+The following differences should be noted compared with GMX architecture :
+- All logic related to GLP token is not relevant for Ondefy and was removed.
+- As fee distribution is not currently relevant for Ondefy, bonusGmxTracker and feeGmxTracker as well as their corresponding distributors were removed. The current staking architecture only includes a single RewardTracker/RewardDistributor pair, with esODY as reward.
+- The need to reserve tokens for depositing esGMX into the Vester contract was removed.
+- Reward boost feature was included in RewardTracker contract. This allows to set a boost percentage individually for any account, resulting in a higher attribution of their esODY staking rewards.
+- Vesting duration is set to 6 months instead of 1 year.
+- While the actual GMX and esGMX contracts inherit from a MintableBaseToken contract, ODY and esODY contracts inherit from Openzeppelin Library (supporting Role-based access control, Pausing, Minting, Burning and Permit signing) with a few modifications in order to facilitate their interaction with vesting/staking contracts.
+
 ## Deployment
 
 To deploy the contracts on the ZkSync network, follow these steps:
