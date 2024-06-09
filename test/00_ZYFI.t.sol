@@ -39,25 +39,31 @@ contract ZYFI_test is Test {
         vm.startPrank(TEAM_ADDRESS);
         zyfiToken.revokeRole(zyfiToken.DEFAULT_ADMIN_ROLE(), DEPLOYER_ADDRESS);
         vm.stopPrank();
-        //TODO: add the checks
+        assertTrue(zyfiToken.hasRole(zyfiToken.DEFAULT_ADMIN_ROLE(), TEAM_ADDRESS));
     }
 
     function test_Mint() public {
         test_GiveAdminRoleAway();
-        //TODO
+        vm.startPrank(DEPLOYER_ADDRESS);
+        zyfiToken.mint(USER1, 10 ether);
+        vm.stopPrank();
+        assertTrue(zyfiToken.balanceOf(USER1) == 10 ether);
     }
 
     function test_Pause() public {
-        //TODO
+        test_GiveAdminRoleAway();
+        vm.startPrank(DEPLOYER_ADDRESS);
+        zyfiToken.mint(USER1, 10 ether);
+        zyfiToken.pause();
+        vm.stopPrank();
+        vm.startPrank(USER1);
+        vm.expectRevert();
+        zyfiToken.transfer(DEPLOYER_ADDRESS, 10 ether);
     }
 
     function test_Upgrade() public {
-        //TODO
+        address newImplem =  address(new ZYFIToken());
+        bytes memory data = "";
+        zyfiToken.upgradeToAndCall(newImplem, data);
     }
-
-
-//     function testFuzz_SetNumber(uint256 x) public {
-//         counter.setNumber(x);
-//         assertEq(counter.number(), x);
-//     }
 }
