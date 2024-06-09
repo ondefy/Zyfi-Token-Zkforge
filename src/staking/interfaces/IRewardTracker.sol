@@ -10,7 +10,6 @@ interface IRewardTracker {
     function updateRewards() external;
     function stake(address _depositToken, uint256 _amount) external;
     function stakeForAccount(address _fundingAccount, address _account, address _depositToken, uint256 _amount) external;
-    function unstake(address _depositToken, uint256 _amount) external;
     function unstakeForAccount(address _account, address _depositToken, uint256 _amount, address _receiver) external;
     function tokensPerInterval() external view returns (uint256);
     function claim(address _receiver) external returns (uint256);
