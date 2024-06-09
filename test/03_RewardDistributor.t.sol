@@ -32,12 +32,12 @@ contract RewardDistributor_Tester is Test {
         console2.log(address(rewardTracker)); // 0xa88CdF6f746fdB9dD637666e63a54009A62B8162
         
         depositTokens.push(zyfiTokenAddress);
-        vm.startPrank(DEPLOYER_ADDRESS);   
         
         // rewardDsitributor is deployed with ZFI as the reward token
         rewardDistributor = RewardDistributor(deployRewardDistributor());
+
+        vm.prank(DEPLOYER_ADDRESS);
         rewardTracker.initialize(depositTokens, address(rewardDistributor)); 
-        vm.stopPrank();
     }
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
