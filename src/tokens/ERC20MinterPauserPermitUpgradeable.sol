@@ -47,7 +47,7 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     /**
      * @dev overrides transfer method to restrict use to accounts with TRANSFERRER_ROLE while in private transfer mode
      */
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+    function transfer(address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
         if (_inPrivateTransferMode) {
             require(hasRole(TRANSFERRER_ROLE, _msgSender()), "AccessControl: account is missing transferrer role to transfer in private transfer mode");
         }
@@ -57,7 +57,7 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     /**
      * @dev overrides transferFrom to allow addresses with TRANSFERRER_ROLE to bypass allowance check
      */
-    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
         if (hasRole(TRANSFERRER_ROLE, _msgSender())) {
             _transfer(from, to, amount);
             return true;
@@ -88,9 +88,4 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-    {}//TODO
 }

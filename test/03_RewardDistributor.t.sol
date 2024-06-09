@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import {Test, console2} from "forge-std/Test.sol";
 import {RewardTracker} from "src/staking/RewardTracker.sol";
 import {ZYFI_test, ZYFIToken} from "./00_ZYFI.t.sol";
-import {esZYFI_test, esZYFIToken} from "./01_esZYFI.t.sol";
 import {RewardTracker_Tester, RewardTracker} from "./02_RewardTracker.t.sol";
 import {RewardDistributor} from "src/staking/RewardDistributor.sol";
 
@@ -13,10 +12,8 @@ contract RewardDistributor_Tester is Test {
     address DEPLOYER_ADDRESS = makeAddr("DEPLOYER_ADDRESS");
     address USER1 = makeAddr("USER1");
     ZYFIToken zyfiToken;
-    esZYFIToken esZyfiToken;
     RewardTracker rewardTracker;
     ZYFI_test zifyDeployer = new ZYFI_test();
-    esZYFI_test esZifyDeployer = new esZYFI_test();
     RewardTracker_Tester rewardTrackerDeployer = new RewardTracker_Tester();
     address[] depositTokens;
     RewardDistributor rewardDistributor;
@@ -26,30 +23,27 @@ contract RewardDistributor_Tester is Test {
         deal(TEAM_ADDRESS, 2 ether);
         deal(USER1, 2 ether);
 
-        vm.startPrank(DEPLOYER_ADDRESS);
         // Deploy ZYFI:
         address zyfiTokenAddress = zifyDeployer.deploy_ZYFI();
         zyfiToken = ZYFIToken(zyfiTokenAddress);
-
-        // Deploy esZYFI:
-        address esZyfiTokenAddress = esZifyDeployer.deploy_esZYFI();
-        esZyfiToken = esZYFIToken(esZyfiTokenAddress);
-        vm.stopPrank();
+        
         //deploy RewardTracker:
         rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker());
+        console2.log(address(rewardTracker)); // 0xa88CdF6f746fdB9dD637666e63a54009A62B8162
         
         depositTokens.push(zyfiTokenAddress);
-        vm.startPrank(DEPLOYER_ADDRESS);
-        rewardTracker.initialize(depositTokens, makeAddr("DISTRIBUTOR"));    
         
-        // constructor(address _rewardToken, address _rewardTracker) {
+        // rewardDsitributor is deployed with ZFI as the reward token
         rewardDistributor = RewardDistributor(deployRewardDistributor());
-        vm.stopPrank();
+
+        vm.prank(DEPLOYER_ADDRESS);
+        rewardTracker.initialize(depositTokens, address(rewardDistributor)); 
     }
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardDistributorAddress = address(new RewardDistributor(address(esZyfiToken), address(rewardTracker)));
+        rewardDistributorAddress = address(new RewardDistributor(address(zyfiToken), address(rewardTracker)));
+        console2.log(rewardDistributorAddress);
         vm.stopPrank();
     }
 

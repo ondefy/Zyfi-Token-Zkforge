@@ -3,13 +3,11 @@ pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {ZYFI_test, ZYFIToken} from "./00_ZYFI.t.sol";
-import {esZYFI_test, esZYFIToken} from "./01_esZYFI.t.sol";
 
 contract RewardRouter is Test {
     address TEAM_ADDRESS;
     address DEPLOYER_ADDRESS;
     ZYFIToken zyfiToken;
-    esZYFIToken esZyfiToken;
     //RewardRouterV2 rewardRouter;
 
     function setUp() public {

@@ -49,7 +49,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     event Claim(address receiver, uint256 amount);
 
-    constructor(string memory _name, string memory _symbol) Governable() { // TODO: does it work without "Governable()"?
+    constructor(string memory _name, string memory _symbol) Governable() {
         name = _name;
         symbol = _symbol;
     }
@@ -120,10 +120,11 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         _stake(_fundingAccount, _account, _depositToken, _amount);
     }
 
-    function unstake(address _depositToken, uint256 _amount) external override nonReentrant {
-        if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
-        _unstake(msg.sender, _depositToken, _amount, msg.sender);
-    }
+    //TODO: removed the unstake function: only the vester can unstakeForAccount
+    // function unstake(address _depositToken, uint256 _amount) external override nonReentrant {
+    //     if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
+    //     _unstake(msg.sender, _depositToken, _amount, msg.sender);
+    // }
 
     function unstakeForAccount(address _account, address _depositToken, uint256 _amount, address _receiver) external override nonReentrant {
         _validateHandler();
