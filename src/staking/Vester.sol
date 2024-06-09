@@ -280,7 +280,7 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         uint256 amount = claimable(_account);
         claimedAmounts[_account] = claimedAmounts[_account] + amount;
         // Unstake from the rewardTracker to the user
-        rewardTracker.unstakeForAccount(address(this), esToken, amount, _receiver);
+        IRewardTracker(rewardTracker).unstakeForAccount(address(this), esToken, amount, _receiver);
         emit Claim(_account, amount);
         return amount;
     }
