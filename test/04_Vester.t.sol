@@ -48,7 +48,7 @@ contract Vester_Tester is Test {
 
         uint256 vestingDuration = 4 * 6 weeks; // 26 weeks = 6 months
         vm.prank(DEPLOYER_ADDRESS);
-        vester = new Vester("staked ZFI", "stZFI", vestingDuration, zyfiTokenAddress, zyfiTokenAddress, address(rewardTracker));
+        vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zyfiTokenAddress, address(rewardTracker));
         vm.stopPrank();
     }
 
@@ -104,5 +104,5 @@ contract Vester_Tester is Test {
     }
 
     //TODO: deposit in Vester and claim after 6 months
-    
+
 }
