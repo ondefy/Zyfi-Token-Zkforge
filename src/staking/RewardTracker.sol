@@ -120,12 +120,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         _stake(_fundingAccount, _account, _depositToken, _amount);
     }
 
-    //TODO: removed the unstake function: only the vester can unstakeForAccount
-    // function unstake(address _depositToken, uint256 _amount) external override nonReentrant {
-    //     if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
-    //     _unstake(msg.sender, _depositToken, _amount, msg.sender);
-    // }
-
+    // removed the unstake function: only the vester can unstakeForAccount
     function unstakeForAccount(address _account, address _depositToken, uint256 _amount, address _receiver) external override nonReentrant {
         _validateHandler();
         _unstake(_account, _depositToken, _amount, _receiver);
@@ -192,7 +187,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function _setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) private {
-        // set a maximum boost value ?
+        //TODO: set a maximum boost value ?
         
         _updateRewards(_account);
 
