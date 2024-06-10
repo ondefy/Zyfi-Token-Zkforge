@@ -11,6 +11,7 @@ contract Vester_Tester is Test {
     address DEPLOYER_ADDRESS = makeAddr("DEPLOYER_ADDRESS");
     address USER1 = makeAddr("USER1");
     address HANDLER = makeAddr("HANDLER");
+    uint256 vestingDuration = 1 weeks;
     ZYFIToken zyfiToken;
     RewardTracker rewardTracker;
     ZYFI_test zifyDeployer = new ZYFI_test();
@@ -24,32 +25,28 @@ contract Vester_Tester is Test {
         deal(TEAM_ADDRESS, 2 ether);
         deal(USER1, 2 ether);
 
-        vm.startPrank(DEPLOYER_ADDRESS);
+
         // Deploy ZYFI:
         address zyfiTokenAddress = zifyDeployer.deploy_ZYFI();
         zyfiToken = ZYFIToken(zyfiTokenAddress);
 
         //deploy RewardTracker:
         rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker());
-        
-        console2.log("The address governing the vestrewardTrackerer is: ");
-        console2.log(rewardTracker.gov());
-        vm.stopPrank();
-
         vm.prank(DEPLOYER_ADDRESS);
         rewardTracker.setGov(TEAM_ADDRESS);
 
         // Enable deposit of stZFI
-        depositTokens.push(address(rewardTracker));
+        depositTokens.push(address(zyfiToken));
         DISTRIBUTOR = deployRewardDistributor();
 
         vm.prank(TEAM_ADDRESS);
         rewardTracker.initialize(depositTokens, DISTRIBUTOR);     
 
-        uint256 vestingDuration = 4 * 6 weeks; // 26 weeks = 6 months
         vm.prank(DEPLOYER_ADDRESS);
         vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zyfiTokenAddress, address(rewardTracker));
-        vm.stopPrank();
+        vm.prank(TEAM_ADDRESS);
+        // let the vester unstake for users
+        rewardTracker.setHandler(address(vester), true);
     }
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
@@ -72,23 +69,35 @@ contract Vester_Tester is Test {
     }
 
     function test_deposit() public setGov(TEAM_ADDRESS){
-        deal(address(rewardTracker), USER1, 2 ether);
+        uint256 amount = 2 ether;
+        deal(address(zyfiToken), USER1, amount);
+        // deposit in rewardTracker
+        vm.startPrank(USER1);
+        zyfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(address(zyfiToken), amount);
+        vm.stopPrank();
         console2.log(vester.gov());
         vm.prank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(false);
 
         vm.startPrank(USER1);
-            rewardTracker.approve(address(vester), 2 ether);
-            vester.deposit(2 ether);
+            rewardTracker.approve(address(vester), amount);
+            vester.deposit(amount);
         vm.stopPrank();
-        assertEq(vester.balanceOf(USER1), 2 ether); 
+        assertEq(vester.balanceOf(USER1), amount); 
     }
 
     function test_deposit_MaxVestableAmount() public setGov(TEAM_ADDRESS){
         uint256 transferredCumulativeRewards = 10 ether;
         uint256 bonusRewards = 15 ether;
         uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
-        deal(address(rewardTracker), USER1, sumRewards);
+        uint256 amount = sumRewards;
+        deal(address(zyfiToken), USER1, amount);
+        // deposit in rewardTracker
+        vm.startPrank(USER1);
+        zyfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(address(zyfiToken), amount);
+        vm.stopPrank();
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
         vester.setHandler(HANDLER, true);
@@ -103,6 +112,156 @@ contract Vester_Tester is Test {
         assertEq(vester.balanceOf(USER1), sumRewards); 
     }
 
-    //TODO: deposit in Vester and claim after 6 months
+    function test_deposit_OneClaim() public setGov(TEAM_ADDRESS){
+        uint256 transferredCumulativeRewards = 10 ether;
+        uint256 bonusRewards = 15 ether;
+        uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
+        deal(address(zyfiToken), USER1, sumRewards);
+        // deposit in rewardTracker
+        vm.startPrank(USER1);
+        zyfiToken.approve(address(rewardTracker), sumRewards);
+        rewardTracker.stake(address(zyfiToken), sumRewards);
+        vm.startPrank(TEAM_ADDRESS);
+        vester.setHasMaxVestableAmount(true);
+        vester.setHandler(HANDLER, true);
+        vm.startPrank(HANDLER);
+        vester.setTransferredCumulativeRewards(USER1, transferredCumulativeRewards);
+        vester.setBonusRewards(USER1, bonusRewards);
+        vm.startPrank(USER1);
+            // no need to approve
+            vester.deposit(sumRewards);
+        vm.stopPrank();
+        assertEq(vester.balanceOf(USER1), sumRewards);
+        uint256 vesterStakedBalance = rewardTracker.balanceOf(address(vester));
+        assertEq(0, vesterStakedBalance);
+        uint256 vesterStakedAmount = rewardTracker.stakedAmounts(address(vester));
+        assertEq(0, vesterStakedAmount);
+        uint256 userStakedAmount = rewardTracker.stakedAmounts(USER1);
+        assertEq(0, userStakedAmount);
+        vm.warp(block.timestamp + 1 + vestingDuration);
+        uint256 claimableAmount = vester.claimable(USER1);
+        console2.log(claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        uint256 vesterBalance = vester.balanceOf(USER1);
+        assertEq(0, vesterBalance);
+        uint256 claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards, claimedBalance);
+    }
+
+    //TODO: deposit in Vester and claim after 2, 3 and 6 months
+    function test_deposit_MultipleClaims() public setGov(TEAM_ADDRESS){
+        uint256 transferredCumulativeRewards = 70 ether;
+        uint256 bonusRewards = 0 ether;
+        uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
+        deal(address(zyfiToken), USER1, sumRewards);
+        // deposit in rewardTracker
+        vm.startPrank(USER1);
+        zyfiToken.approve(address(rewardTracker), sumRewards);
+        rewardTracker.stake(address(zyfiToken), sumRewards);
+        vm.startPrank(TEAM_ADDRESS);
+        vester.setHasMaxVestableAmount(true);
+        vester.setHandler(HANDLER, true);
+        vm.startPrank(HANDLER);
+        vester.setTransferredCumulativeRewards(USER1, transferredCumulativeRewards);
+        vester.setBonusRewards(USER1, bonusRewards);
+        vm.startPrank(USER1);
+            rewardTracker.approve(address(vester), sumRewards);
+            vester.deposit(sumRewards);
+        vm.stopPrank();
+        assertEq(vester.balanceOf(USER1), sumRewards);
+        uint256 vesterStakedBalance = zyfiToken.balanceOf(address(vester));
+        assertEq(sumRewards, vesterStakedBalance);
+        uint256 vesterStakedAmount = rewardTracker.stakedAmounts(address(USER1));
+        assertEq(0, vesterStakedAmount);
+        vm.warp(block.timestamp + 1 days);
+        uint256 claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        uint256 vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7, vesterBalance);
+        uint256 claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7, claimedBalance);
+        // 2nd day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7 * 2, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7 * 2, claimedBalance);
+        // 3rd day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7 * 3, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7 * 3, claimedBalance);
+        // 4th day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7 * 4, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7 * 4, claimedBalance);
+        // 5th day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7 * 5, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7 * 5, claimedBalance);
+        // 6th day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards / 7 * 6, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards / 7 * 6, claimedBalance);
+        // 7th day
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(sumRewards / 7, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(sumRewards - sumRewards, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards, claimedBalance);
+        // 8th day (nothing to claim)
+        vm.warp(block.timestamp + 1 days);
+        claimableAmount = vester.claimable(USER1);
+        assertEq(0, claimableAmount);
+        vm.startPrank(USER1);
+            vester.claim();
+        vm.stopPrank();
+        vesterBalance = vester.balanceOf(USER1);
+        assertEq(0, vesterBalance);
+        claimedBalance = zyfiToken.balanceOf(USER1);
+        assertEq(sumRewards, claimedBalance);
+    }
 
 }
