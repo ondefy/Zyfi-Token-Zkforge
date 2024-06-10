@@ -109,7 +109,10 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         uint256 totalVested = balance + claimedAmount;
         require(totalVested > 0, "Vester: vested amount is zero");
 
-        IERC20(esToken).safeTransfer(_receiver, balance);
+        // stake the ZFI token for the user
+
+        IRewardTracker(rewardTracker).stakeForAccount(address(this), _receiver, address(claimableToken), balance);
+
         _burn(account, balance);
 
         delete cumulativeClaimAmounts[account];
@@ -232,7 +235,8 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
         _updateVesting(_account);
 
-        IERC20(esToken).safeTransferFrom(_account, address(this), _amount);
+        // unstake for the user
+        IRewardTracker(rewardTracker).unstakeForAccount(_account, claimableToken, _amount, address(this));
 
         _mint(_account, _amount);
 
@@ -255,8 +259,6 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         // transfer claimableAmount from balances to cumulativeClaimAmounts
         _burn(_account, amount);
         cumulativeClaimAmounts[_account] = cumulativeClaimAmounts[_account] + amount;
-
-        IERC20Burnable(esToken).burnFrom(address(this), amount);
     }
 
     function _getNextClaimableAmount(address _account) private view returns (uint256) {
@@ -279,8 +281,9 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         _updateVesting(_account);
         uint256 amount = claimable(_account);
         claimedAmounts[_account] = claimedAmounts[_account] + amount;
-        // Unstake from the rewardTracker to the user
-        IRewardTracker(rewardTracker).unstakeForAccount(address(this), esToken, amount, _receiver);
+
+        IERC20(claimableToken).transfer(_receiver, amount);
+
         emit Claim(_account, amount);
         return amount;
     }
