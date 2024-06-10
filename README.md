@@ -41,9 +41,7 @@ Key Features:
 - Burning esZFY tokens and distributing ZYFI tokens over a 6-month period upon unvesting.
 
 ### Architecture
-The architecture previous architecture of ODY tokenomics can be summarized in the following figure :
-
-![](assets/ody-architecture.svg)  
+TODO
  
 ### New Contract details
 - `Vester` : Converts stZFI into ZFI (forked from GMX's `Vester`).
