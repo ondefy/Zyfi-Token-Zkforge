@@ -41,7 +41,7 @@ Key Features:
 - Burning esZFY tokens and distributing ZYFI tokens over a 6-month period upon unvesting.
 
 ### Architecture
-TODO
+ ![alt text](assets/ZFI.drawio.png)
  
 ### New Contract details
 - `Vester` : Converts stZFI into ZFI (forked from GMX's `Vester`).
