@@ -3,16 +3,16 @@ pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {RewardTracker} from "src/staking/RewardTracker.sol";
-import {ZYFI_test, ZYFIToken} from "./00_ZYFI.t.sol";
+import {ZFI_test, ZFIToken} from "./00_ZFI.t.sol";
 import {RewardDistributor} from "src/staking/RewardDistributor.sol";
 
 contract RewardTracker_Tester is Test {
     address TEAM_ADDRESS = makeAddr("TEAM_ADDRESS");
     address DEPLOYER_ADDRESS = makeAddr("DEPLOYER_ADDRESS");
     address USER1 = makeAddr("USER1");
-    ZYFIToken zyfiToken;
+    ZFIToken zfiToken;
     RewardTracker rewardTracker;
-    ZYFI_test zifyDeployer = new ZYFI_test();
+    ZFI_test zfiDeployer = new ZFI_test();
     address[] depositTokens;
     address DISTRIBUTOR;
 
@@ -21,14 +21,14 @@ contract RewardTracker_Tester is Test {
         deal(TEAM_ADDRESS, 2 ether);
         deal(USER1, 2 ether);
 
-        // Deploy ZYFI:
-        address zyfiTokenAddress = zifyDeployer.deploy_ZYFI();
-        zyfiToken = ZYFIToken(zyfiTokenAddress);
+        // Deploy ZFI:
+        address zfiTokenAddress = zfiDeployer.deploy_ZFI();
+        zfiToken = ZFIToken(zfiTokenAddress);
 
         //deploy RewardTracker:
         rewardTracker = RewardTracker(RewardTracker_Tester.deployRewardTracker());
         
-        depositTokens.push(zyfiTokenAddress);
+        depositTokens.push(zfiTokenAddress);
         DISTRIBUTOR = deployRewardDistributor();
         vm.startPrank(DEPLOYER_ADDRESS);
         rewardTracker.initialize(depositTokens, DISTRIBUTOR);
@@ -37,19 +37,19 @@ contract RewardTracker_Tester is Test {
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardTrackerAddress = address(new RewardTracker("staked ZYFI", "stZFY"));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY"));
         console2.log(rewardTrackerAddress);
         vm.stopPrank();
     }
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardDistributorAddress = address(new RewardDistributor(address(zyfiToken), address(rewardTracker)));
+        rewardDistributorAddress = address(new RewardDistributor(address(zfiToken), address(rewardTracker)));
         console2.log(rewardDistributorAddress);
         vm.stopPrank();
     }
 
-    function test_isInitialized() public {
+    function test_isInitialized() public view {
         address owner = rewardTracker.gov();
         assertEq(owner, DEPLOYER_ADDRESS);
 
@@ -70,15 +70,15 @@ contract RewardTracker_Tester is Test {
     }
 
     function test_stake() public setGov(TEAM_ADDRESS) {
-        deal(address(zyfiToken), USER1, 2 ether);
+        deal(address(zfiToken), USER1, 2 ether);
         // setDepositToken
         // vm.startPrank(TEAM_ADDRESS);
-        // rewardTracker.setDepositToken(address(zyfiToken), true);
+        // rewardTracker.setDepositToken(address(zfiToken), true);
         // vm.stopPrank();
 
         vm.startPrank(USER1);
-            zyfiToken.approve(address(rewardTracker), 2 ether);
-            rewardTracker.stake(address(zyfiToken), 2 ether);
+            zfiToken.approve(address(rewardTracker), 2 ether);
+            rewardTracker.stake(address(zfiToken), 2 ether);
         vm.stopPrank();
         uint256 balance = rewardTracker.balanceOf(USER1);
         assertEq(balance, 2 ether);
@@ -91,6 +91,6 @@ contract RewardTracker_Tester is Test {
     // tokensPerInterval
     // updateRewards
 
-    // + restaked asset for rewards in ETH and rewards in ZYFI
+    // + restaked asset for rewards in ETH and rewards in ZFI
 
 }

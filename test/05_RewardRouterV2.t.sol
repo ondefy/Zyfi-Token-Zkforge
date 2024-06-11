@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ZYFI_test, ZYFIToken} from "./00_ZYFI.t.sol";
+import {ZFI_test, ZFIToken} from "./00_ZFI.t.sol";
 
 contract RewardRouter is Test {
     address TEAM_ADDRESS;
     address DEPLOYER_ADDRESS;
-    ZYFIToken zyfiToken;
+    ZFIToken zfiToken;
     //RewardRouterV2 rewardRouter;
 
     function setUp() public {
@@ -17,7 +17,7 @@ contract RewardRouter is Test {
         vm.startPrank(DEPLOYER_ADDRESS);
 
         // rewardRouter = new RewardRouterV2();
-        // rewardRouter.initialize(address(ZYFIToken), address(esZfyToken));     
+        // rewardRouter.initialize(address(ZFIToken), address(esZfyToken));     
         vm.stopPrank();
     }
 

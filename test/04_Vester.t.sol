@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ZYFI_test, ZYFIToken} from "./00_ZYFI.t.sol";
+import {ZFI_test, ZFIToken} from "./00_ZFI.t.sol";
 import {Vester} from "src/staking/Vester.sol";
 import {RewardTracker_Tester, RewardTracker, RewardDistributor} from "./02_RewardTracker.t.sol";
 
@@ -12,9 +12,9 @@ contract Vester_Tester is Test {
     address USER1 = makeAddr("USER1");
     address HANDLER = makeAddr("HANDLER");
     uint256 vestingDuration = 1 weeks;
-    ZYFIToken zyfiToken;
+    ZFIToken zfiToken;
     RewardTracker rewardTracker;
-    ZYFI_test zifyDeployer = new ZYFI_test();
+    ZFI_test zfiDeployer = new ZFI_test();
     address[] depositTokens;
     RewardTracker_Tester rewardTrackerDeployer = new RewardTracker_Tester();
     Vester vester;
@@ -26,9 +26,9 @@ contract Vester_Tester is Test {
         deal(USER1, 2 ether);
 
 
-        // Deploy ZYFI:
-        address zyfiTokenAddress = zifyDeployer.deploy_ZYFI();
-        zyfiToken = ZYFIToken(zyfiTokenAddress);
+        // Deploy ZFI:
+        address zfiTokenAddress = zfiDeployer.deploy_ZFI();
+        zfiToken = ZFIToken(zfiTokenAddress);
 
         //deploy RewardTracker:
         rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker());
@@ -36,14 +36,14 @@ contract Vester_Tester is Test {
         rewardTracker.setGov(TEAM_ADDRESS);
 
         // Enable deposit of stZFI
-        depositTokens.push(address(zyfiToken));
+        depositTokens.push(address(zfiToken));
         DISTRIBUTOR = deployRewardDistributor();
 
         vm.prank(TEAM_ADDRESS);
         rewardTracker.initialize(depositTokens, DISTRIBUTOR);     
 
         vm.prank(DEPLOYER_ADDRESS);
-        vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zyfiTokenAddress, address(rewardTracker));
+        vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zfiTokenAddress, address(rewardTracker));
         vm.prank(TEAM_ADDRESS);
         // let the vester unstake for users
         rewardTracker.setHandler(address(vester), true);
@@ -51,7 +51,7 @@ contract Vester_Tester is Test {
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardDistributorAddress = address(new RewardDistributor(address(zyfiToken), address(rewardTracker)));
+        rewardDistributorAddress = address(new RewardDistributor(address(zfiToken), address(rewardTracker)));
         console2.log(rewardDistributorAddress);
         vm.stopPrank();
     }
@@ -70,11 +70,11 @@ contract Vester_Tester is Test {
 
     function test_deposit() public setGov(TEAM_ADDRESS){
         uint256 amount = 2 ether;
-        deal(address(zyfiToken), USER1, amount);
+        deal(address(zfiToken), USER1, amount);
         // deposit in rewardTracker
         vm.startPrank(USER1);
-        zyfiToken.approve(address(rewardTracker), amount);
-        rewardTracker.stake(address(zyfiToken), amount);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(address(zfiToken), amount);
         vm.stopPrank();
         console2.log(vester.gov());
         vm.prank(TEAM_ADDRESS);
@@ -92,11 +92,11 @@ contract Vester_Tester is Test {
         uint256 bonusRewards = 15 ether;
         uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
         uint256 amount = sumRewards;
-        deal(address(zyfiToken), USER1, amount);
+        deal(address(zfiToken), USER1, amount);
         // deposit in rewardTracker
         vm.startPrank(USER1);
-        zyfiToken.approve(address(rewardTracker), amount);
-        rewardTracker.stake(address(zyfiToken), amount);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(address(zfiToken), amount);
         vm.stopPrank();
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
@@ -116,11 +116,11 @@ contract Vester_Tester is Test {
         uint256 transferredCumulativeRewards = 10 ether;
         uint256 bonusRewards = 15 ether;
         uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
-        deal(address(zyfiToken), USER1, sumRewards);
+        deal(address(zfiToken), USER1, sumRewards);
         // deposit in rewardTracker
         vm.startPrank(USER1);
-        zyfiToken.approve(address(rewardTracker), sumRewards);
-        rewardTracker.stake(address(zyfiToken), sumRewards);
+        zfiToken.approve(address(rewardTracker), sumRewards);
+        rewardTracker.stake(address(zfiToken), sumRewards);
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
         vester.setHandler(HANDLER, true);
@@ -146,7 +146,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         uint256 vesterBalance = vester.balanceOf(USER1);
         assertEq(0, vesterBalance);
-        uint256 claimedBalance = zyfiToken.balanceOf(USER1);
+        uint256 claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards, claimedBalance);
     }
 
@@ -155,11 +155,11 @@ contract Vester_Tester is Test {
         uint256 transferredCumulativeRewards = 70 ether;
         uint256 bonusRewards = 0 ether;
         uint256 sumRewards = transferredCumulativeRewards + bonusRewards;
-        deal(address(zyfiToken), USER1, sumRewards);
+        deal(address(zfiToken), USER1, sumRewards);
         // deposit in rewardTracker
         vm.startPrank(USER1);
-        zyfiToken.approve(address(rewardTracker), sumRewards);
-        rewardTracker.stake(address(zyfiToken), sumRewards);
+        zfiToken.approve(address(rewardTracker), sumRewards);
+        rewardTracker.stake(address(zfiToken), sumRewards);
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
         vester.setHandler(HANDLER, true);
@@ -171,7 +171,7 @@ contract Vester_Tester is Test {
             vester.deposit(sumRewards);
         vm.stopPrank();
         assertEq(vester.balanceOf(USER1), sumRewards);
-        uint256 vesterStakedBalance = zyfiToken.balanceOf(address(vester));
+        uint256 vesterStakedBalance = zfiToken.balanceOf(address(vester));
         assertEq(sumRewards, vesterStakedBalance);
         uint256 vesterStakedAmount = rewardTracker.stakedAmounts(address(USER1));
         assertEq(0, vesterStakedAmount);
@@ -183,7 +183,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         uint256 vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7, vesterBalance);
-        uint256 claimedBalance = zyfiToken.balanceOf(USER1);
+        uint256 claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7, claimedBalance);
         // 2nd day
         vm.warp(block.timestamp + 1 days);
@@ -194,7 +194,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7 * 2, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7 * 2, claimedBalance);
         // 3rd day
         vm.warp(block.timestamp + 1 days);
@@ -205,7 +205,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7 * 3, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7 * 3, claimedBalance);
         // 4th day
         vm.warp(block.timestamp + 1 days);
@@ -216,7 +216,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7 * 4, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7 * 4, claimedBalance);
         // 5th day
         vm.warp(block.timestamp + 1 days);
@@ -227,7 +227,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7 * 5, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7 * 5, claimedBalance);
         // 6th day
         vm.warp(block.timestamp + 1 days);
@@ -238,7 +238,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards / 7 * 6, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards / 7 * 6, claimedBalance);
         // 7th day
         vm.warp(block.timestamp + 1 days);
@@ -249,7 +249,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(sumRewards - sumRewards, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards, claimedBalance);
         // 8th day (nothing to claim)
         vm.warp(block.timestamp + 1 days);
@@ -260,7 +260,7 @@ contract Vester_Tester is Test {
         vm.stopPrank();
         vesterBalance = vester.balanceOf(USER1);
         assertEq(0, vesterBalance);
-        claimedBalance = zyfiToken.balanceOf(USER1);
+        claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards, claimedBalance);
     }
 

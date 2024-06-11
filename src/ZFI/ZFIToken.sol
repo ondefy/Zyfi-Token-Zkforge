@@ -6,13 +6,13 @@ import "../tokens/ERC20MinterPauserPermitUpgradeable.sol";
 /**
  * @notice ZYFIToken token contract
  */
-contract ZYFIToken is ERC20MinterPauserPermitUpgradeable {
+contract ZFIToken is ERC20MinterPauserPermitUpgradeable {
     /**
      * @notice Intializer
      * @param _ONDEFYDAO the address of the owner
      */
     function initialize2(address _ONDEFYDAO) public initializer {
-        super.initialize("Ondefy Token", "ZYFI");
+        super.initialize("Zyfi Token", "ZFI");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
 
