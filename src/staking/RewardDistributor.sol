@@ -73,7 +73,10 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
         uint256 balance = IERC20(rewardToken).balanceOf(address(this));
         if (amount > balance) { amount = balance; }
 
-        IERC20(rewardToken).safeTransfer(msg.sender, amount);
+        //TODO: edit this
+        //TODO: need an approve?
+        IRewardTracker(rewardTracker).stakeForAccount(address(this), msg.sender, rewardToken, amount);
+        // IERC20(rewardToken).safeTransfer(msg.sender, amount);
 
         emit Distribute(amount);
         return amount;

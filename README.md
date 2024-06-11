@@ -52,6 +52,9 @@ When depositing stZFI in the Vester, the stZFI are unstaked from the user wallet
 If the user withdraws in the meantime, the ZFI are staked for the user to their wallet (stZFI).
 And when the user claims, the Vester sends ZFI to the user.
 
+### Important details:
+Also, the rewardTracker can only distribute one kind of token as reward (we chose stZFI), so if we want to distribute USDC for example, we need the user to stake again their stZFI in another rewardTracker (with the unstake function available) with a distributor of USDC
+
 ## Deployment
 
 To deploy the contracts on the ZkSync network, follow these steps:

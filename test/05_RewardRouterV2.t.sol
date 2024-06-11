@@ -21,5 +21,15 @@ contract RewardRouter is Test {
         vm.stopPrank();
     }
 
+// function initialize(
+    //     address _ody,
+    //     address _stZfi,
+    //     address _stakedOdyTracker,
+    //     address _odyVester
+    // )
 
+
+    // batchStakeOdyForAccount
+
+    //stakeOdyForAccount
 }

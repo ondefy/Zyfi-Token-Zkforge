@@ -42,7 +42,7 @@ contract RewardDistributor_Tester is Test {
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardDistributorAddress = address(new RewardDistributor(address(zfiToken), address(rewardTracker)));
+        rewardDistributorAddress = address(new RewardDistributor(address(rewardTracker), address(rewardTracker)));
         console2.log(rewardDistributorAddress);
         vm.stopPrank();
     }
@@ -57,5 +57,21 @@ contract RewardDistributor_Tester is Test {
             rewardTracker.setGov(_newGov);
         vm.stopPrank();
         _;
+    }
+
+
+    function test_distributeRewards() public setGov(TEAM_ADDRESS) {
+        //setAdmin
+        //updateLastDistributionTime
+        //setTokensPerInterval
+
+        // user deposit in stZFI
+        
+
+        // assert with pendingRewards
+
+        //rewardTracker call distribute
+
+        
     }
 }
