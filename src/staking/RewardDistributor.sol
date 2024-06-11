@@ -47,6 +47,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
         lastDistributionTime = block.timestamp;
     }
 
+    /// @notice Interval is 1 second
     function setTokensPerInterval(uint256 _amount) external onlyAdmin {
         require(lastDistributionTime != 0, "RewardDistributor: invalid lastDistributionTime");
         IRewardTracker(rewardTracker).updateRewards();
@@ -59,7 +60,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
             return 0;
         }
 
-        uint256 timeDiff = block.timestamp - (lastDistributionTime);//TODO: verify that underflows are forbiden
+        uint256 timeDiff = block.timestamp - (lastDistributionTime);
         return tokensPerInterval * timeDiff;
     }
 
@@ -73,10 +74,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
         uint256 balance = IERC20(rewardToken).balanceOf(address(this));
         if (amount > balance) { amount = balance; }
 
-        //TODO: edit this
-        //TODO: need an approve?
-        IRewardTracker(rewardTracker).stakeForAccount(address(this), msg.sender, rewardToken, amount);
-        // IERC20(rewardToken).safeTransfer(msg.sender, amount);
+        IERC20(rewardToken).safeTransfer(msg.sender, amount);
 
         emit Distribute(amount);
         return amount;
