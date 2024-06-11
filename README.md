@@ -53,7 +53,7 @@ If the user withdraws in the meantime, the ZFI are staked for the user to their 
 And when the user claims, the Vester sends ZFI to the user.
 
 ### Important details:
-Also, the rewardTracker can only distribute one kind of token as reward (we chose stZFI), so if we want to distribute USDC for example, we need the user to stake again their stZFI in another rewardTracker (with the unstake function available) with a distributor of USDC
+Also, the rewardTracker can only distribute one kind of token as reward (we chose stZFI), so if we want to distribute USDC for example, we need the user to stake again their stZFI in another UNMODIFIED rewardTracker (with the unstake function available: https://github.com/gmx-io/gmx-contracts/blob/master/contracts/staking/RewardTracker.sol) with a distributor of associated to the other ERC20.
 
 ## Deployment
 
