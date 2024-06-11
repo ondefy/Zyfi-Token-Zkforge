@@ -51,6 +51,8 @@ The following differences should be noted compared with GMX architecture :
 When depositing stZFI in the Vester, the stZFI are unstaked from the user wallet to the Vester's contract (from stZFI to ZFI).
 If the user withdraws in the meantime, the ZFI are staked for the user to their wallet (stZFI).
 And when the user claims, the Vester sends ZFI to the user.
+#### RewardTracker:
+The claim function of the reward tracker has been modified to stake the ZFI tokens given by the RewardDistributor directly into the user wallet.
 
 ### Important details:
 Also, the rewardTracker can only distribute one kind of token as reward (we chose stZFI), so if we want to distribute USDC for example, we need the user to stake again their stZFI in another UNMODIFIED rewardTracker (with the unstake function available: https://github.com/gmx-io/gmx-contracts/blob/master/contracts/staking/RewardTracker.sol) with a distributor of associated to the other ERC20.
