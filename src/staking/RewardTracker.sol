@@ -204,7 +204,10 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         claimableReward[_account] = 0;
 
         if (tokenAmount > 0) {
-            IERC20(rewardToken()).safeTransfer(_receiver, tokenAmount);
+            // stake for the user
+            address _depositToken = IRewardDistributor(distributor).rewardToken();
+            IERC20(_depositToken).approve(address(this), tokenAmount);
+            _stake(address(this), _receiver, _depositToken, tokenAmount);
             emit Claim(_account, tokenAmount);
         }
 
