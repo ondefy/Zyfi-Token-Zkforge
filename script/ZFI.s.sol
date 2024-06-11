@@ -6,7 +6,7 @@ import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 
-contract ZfyScript is Script {
+contract ZfiScript is Script {
     address TEAM_ADDRESS;
     address DEPLOYER_ADDRESS;
     address PROXY;
@@ -30,6 +30,8 @@ contract ZfyScript is Script {
         address ZFITokenImplementation = address(new ZFIToken());
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
         //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
+        console2.log("Token address is: ");
+        console2.log(PROXY);
         vm.stopBroadcast();
     }
 }
