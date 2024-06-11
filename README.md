@@ -38,7 +38,7 @@ Key Features:
 
 The following differences should be noted compared with GMX architecture :
 - All logic related to GLP token is not relevant for Ondefy and was removed.
-- As fee distribution is not currently relevant for Zyfi, bonusGmxTracker and feeGmxTracker as well as their corresponding distributors were removed. The current staking architecture only includes a single RewardTracker/RewardDistributor pair, with esODY as reward. <!-- TODO: edit this sentence when fixed -->
+- As fee distribution is not currently relevant for Zyfi, bonusGmxTracker and feeGmxTracker as well as their corresponding distributors were removed. The current staking architecture only includes a single RewardTracker/RewardDistributor pair, with stZFI as reward.
 - The need to reserve tokens for depositing esGMX into the Vester contract was removed.
 - Reward boost feature was included in RewardTracker contract. This allows to set a boost percentage individually for any account, resulting in a higher attribution of their staking rewards.
 - Vesting duration is depending on the instance. It is meant to be 6, 12 and 24 months (accross different staked ZFI instances) instead of 1 year.
