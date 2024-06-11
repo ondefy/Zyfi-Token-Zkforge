@@ -137,6 +137,7 @@ contract RewardDistributor_Tester is Test {
         uint256 pendingRewards = rewardDistributor.pendingRewards();
         assertEq(1 ether, pendingRewards);
 
+        vm.startPrank(USER1);
         uint256 claimRewards = rewardTracker.claim(USER1);
         assertEq(tokenPerInterval / 2, claimRewards);
 
@@ -145,8 +146,16 @@ contract RewardDistributor_Tester is Test {
         assertEq(userAmount + tokenPerInterval/2, userBalance);
 
         vm.startPrank(USER2);
+
+        // pendingRewards = rewardDistributor.pendingRewards();
+        // assertEq(0.5 ether, pendingRewards);
+
+        uint256 claimableAmount = rewardTracker.claimable(USER2);
+        assertEq(tokenPerInterval/2, claimableAmount);
+
         claimRewards = rewardTracker.claim(USER2);
         assertEq(tokenPerInterval / 2, claimRewards);
+
 
         userBalance = rewardTracker.balanceOf(USER2);
         assertEq(userAmount + pendingRewards/2, userBalance);
