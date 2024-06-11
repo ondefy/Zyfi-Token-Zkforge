@@ -68,14 +68,6 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         _stakeOdy(msg.sender, msg.sender, stZfi, _amount);
     }
 
-    function unstakeOdy(uint256 _amount) external nonReentrant {
-        _unstakeOdy(msg.sender, zfi, _amount);
-    }
-
-    function unstakeEsOdy(uint256 _amount) external nonReentrant {
-        _unstakeOdy(msg.sender, stZfi, _amount);
-    }
-
     function claimEsOdy() external nonReentrant {
         address account = msg.sender;
 
