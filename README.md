@@ -1,51 +1,35 @@
-# Ondefy (ZYFI) Solidity Project
+# Zyfi (ZFI) Solidity Project
 
 ## Overview
 
-This project involves the development of Solidity contracts to implement the tokenomics of Ondefy (ZYFI). The contracts are built using Foundry and are intended for deployment on the ZkSync network. The primary contracts developed in this project are:
+This project involves the development of Solidity contracts to implement the tokenomics of Zyfi (ZFI). The contracts are built using Foundry and are intended for deployment on the ZkSync network. The primary contracts developed in this project are:
 
-1. **Staking Contract for ZYFI Token**
-   - Allows users to stake ZYFI tokens.
+1. **Staking for ZFI Token**
+   - Allows users to stake ZFI tokens to get stZFI.
    - Supports the minting of a non-transferable stZFY token.
-   - Enables the distribution of ZYFI rewards and yield in any ERC20 token.
-   - Implements a cooldown period for users wishing to withdraw from the staking contract.
+   - Enables the distribution of ZFI rewards and yield in an ERC20 token.
+   - Implements a cooldown period for users wishing to withdraw from the staking contract (6, 12 or 24 months).
 
-2. **Escrowed Token Contract**
-   - Creates an escrowed token (esZFY) that can be minted from ZYFI by the team.
-   - Implements an "airdrop" mechanism to distribute esZFY to any address.
-   - Escrowed tokens behave similarly to staked tokens but remain locked until the user triggers unvesting.
-   - Unescrowing/unvesting results in burning esZFY and distributing ZYFI tokens over a 6-month period.
 
 ## Contract Details
 
 ### Staking Contract (Staking.sol)
 
-The Staking contract facilitates staking of ZYFI tokens and provides functionality for managing staked tokens, rewards, and cooldown periods for withdrawals.
+The Staking contract facilitates staking of ZFI tokens and provides functionality for managing staked tokens, rewards, and cooldown periods for withdrawals.
 
 Key Features:
 
-- Staking ZYFI tokens.
+- Staking ZFI tokens.
 - Minting stZFY tokens.
-- Distributing rewards in any ERC20 token.
+- Distributing rewards in an ERC20 token.
 - Implementing a cooldown period for withdrawals.
-
-### Escrowed Token Contract (EscrowedToken.sol)
-
-The Escrowed Token contract manages the creation and distribution of esZFY tokens, which are minted from ZYFI tokens and locked until unvesting is triggered.
-
-Key Features:
-
-- Creating and minting esZFY tokens from ZYFI.
-- Airdropping esZFY tokens to any address.
-- Locking of escrowed tokens until unvesting is initiated.
-- Burning esZFY tokens and distributing ZYFI tokens over a 6-month period upon unvesting.
 
 ### Architecture
  ![alt text](assets/ZFI.drawio.png)
- 
+
 ### New Contract details
 - `Vester` : Converts stZFI into ZFI (forked from GMX's `Vester`).
-- `RewardTracker` : Manages staking and convert ZFI to stZFI. User cannot convert back. Comes under the form of ERC20 token (forked from GMX's `RewardTracker`).
+- `RewardTracker` : Manages staking and convert ZFI to stZFI. User cannot convert back, they have to go through the Vester. Comes under the form of ERC20 token (forked from GMX's `RewardTracker`).
 - `RewardDistributor` : Distributes necessary funds to `RewardTracker` for staking rewards (forked from GMX's `RewardDistributor`).
 - `RewardRouter` : Pilots `RewardTracker` and `Vester` contracts for handling of rewards and full account transfer. (forked from GMX's `RewardRouterV2`).
 - `ZFIToken` : ZFI token, inherits from `ERC20MinterPauserPermitUpgradeable`.
@@ -54,15 +38,19 @@ Key Features:
 
 The following differences should be noted compared with GMX architecture :
 - All logic related to GLP token is not relevant for Ondefy and was removed.
-- As fee distribution is not currently relevant for Ondefy, bonusGmxTracker and feeGmxTracker as well as their corresponding distributors were removed. The current staking architecture only includes a single RewardTracker/RewardDistributor pair, with esODY as reward.
+- As fee distribution is not currently relevant for Zyfi, bonusGmxTracker and feeGmxTracker as well as their corresponding distributors were removed. The current staking architecture only includes a single RewardTracker/RewardDistributor pair, with esODY as reward. <!-- TODO: edit this sentence when fixed -->
 - The need to reserve tokens for depositing esGMX into the Vester contract was removed.
-- Reward boost feature was included in RewardTracker contract. This allows to set a boost percentage individually for any account, resulting in a higher attribution of their esODY staking rewards.
-- Vesting duration is set to 6 months instead of 1 year.
-- While the actual GMX and esGMX contracts inherit from a MintableBaseToken contract, ODY and esODY contracts inherit from Openzeppelin Library (supporting Role-based access control, Pausing, Minting, Burning and Permit signing) with a few modifications in order to facilitate their interaction with vesting/staking contracts.
+- Reward boost feature was included in RewardTracker contract. This allows to set a boost percentage individually for any account, resulting in a higher attribution of their staking rewards.
+- Vesting duration is depending on the instance. It is meant to be 6, 12 and 24 months (accross different staked ZFI instances) instead of 1 year.
+- While the actual GMX and esGMX contracts inherit from a MintableBaseToken contract, ZFI contract inherits from Openzeppelin Library (supporting Role-based access control, Pausing, Minting, Burning and Permit signing) with a few modifications in order to facilitate its interaction with vesting/staking contracts.
 
-New changes:
+### New changes:
 - The RewardTracker "unstake" function has been removed
 - The Vester can unstake stZFI for the user after the 6 months period
+#### Vester:
+When depositing stZFI in the Vester, the stZFI are unstaked from the user wallet to the Vester's contract (from stZFI to ZFI).
+If the user withdraws in the meantime, the ZFI are staked for the user to their wallet (stZFI).
+And when the user claims, the Vester sends ZFI to the user.
 
 ## Deployment
 
