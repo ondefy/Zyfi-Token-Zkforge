@@ -17,7 +17,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
 
     address public zfi;
 
-    address public stakedZfiTracker; //TODO: test this file + remove references to old names
+    address public stakedZfiTracker;
 
     address public zfiVester;
 
