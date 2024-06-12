@@ -10,17 +10,17 @@ contract ZfiScript is Script {
     address TEAM_ADDRESS;
     address DEPLOYER_ADDRESS;
     address PROXY;
+    uint256 deployerPrivateKey;
 
     function setUp() public {
         TEAM_ADDRESS = vm.envAddress("TEAM_ADDRESS");
-        DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        
     }
 
     function run() public {
         
-        vm.broadcast();
+        vm.startBroadcast(deployerPrivateKey);
         //TODO: fix the deployement via openzeppelin Upgrades
         // address proxy = Upgrades.deployUUPSProxy(
         // "ZFIToken.sol",
