@@ -114,7 +114,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     function _compoundZfi(address _account) private {
-        uint256 stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(_account, _account);
+        IRewardTracker(stakedZfiTracker).claimForAccount(_account, _account);
     }
 
     function _stakeZfi(address _fundingAccount, address _account, address _token, uint256 _amount) private {
