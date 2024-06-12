@@ -7,15 +7,13 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 
 contract ZfiScript is Script {
-    address TEAM_ADDRESS;
-    address DEPLOYER_ADDRESS;
+    address GOV_ADDRESS;
     address PROXY;
     uint256 deployerPrivateKey;
 
     function setUp() public {
-        TEAM_ADDRESS = vm.envAddress("TEAM_ADDRESS");
+        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
     }
 
     function run() public {
@@ -28,10 +26,11 @@ contract ZfiScript is Script {
 
         // In the meantime, unsafe deployment:
         address ZFITokenImplementation = address(new ZFIToken());
-        PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
+        PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
         //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
         console2.log("Token address is: ");
         console2.log(PROXY);
+        ZFIToken(PROXY).initialize2(GOV_ADDRESS);
         vm.stopBroadcast();
     }
 }
