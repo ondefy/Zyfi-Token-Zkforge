@@ -78,8 +78,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     function handleRewards(
         bool _shouldClaimZfi,
         bool _shouldStakeZfi,
-        bool _shouldClaimStZfi,
-        bool _shouldStakeStZfi
+        bool _shouldClaimStZfi
     ) external nonReentrant {
         address account = msg.sender;
 
