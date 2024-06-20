@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 contract Governable {
+    error ZeroAddressError();
+
     address public gov;
 
     constructor() {
@@ -15,6 +17,9 @@ contract Governable {
     }
 
     function setGov(address _gov) external onlyGov {
+        if (_gov == address(0)) {
+            revert ZeroAddressError();
+        }
         gov = _gov;
     }
 }
