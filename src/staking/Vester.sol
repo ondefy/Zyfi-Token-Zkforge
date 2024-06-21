@@ -167,11 +167,12 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
         uint256 cumulativeRewardDeduction = cumulativeRewardDeductions[_account];
 
-        if (maxVestableAmount < cumulativeRewardDeduction) {
-            return 0;
+        unchecked {
+            if (maxVestableAmount < cumulativeRewardDeduction) {
+                return 0;
+            }
+            return maxVestableAmount - cumulativeRewardDeduction;
         }
-
-        return maxVestableAmount - cumulativeRewardDeduction;
     }
 
     function hasRewardTracker() public view returns (bool) {
