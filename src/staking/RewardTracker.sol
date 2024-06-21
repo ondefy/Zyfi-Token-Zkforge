@@ -14,6 +14,8 @@ import "../access/Governable.sol";
 contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     using SafeERC20 for IERC20;
 
+    error AuthorizationError();
+
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
     uint256 public constant PRECISION = 1e30;
 
@@ -111,7 +113,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function stake(address _depositToken, uint256 _amount) external override nonReentrant {
-        if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
+        if (inPrivateStakingMode) { 
+            revert AuthorizationError(); 
+        }
         _stake(msg.sender, msg.sender, _depositToken, _amount);
     }
 
@@ -161,7 +165,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function claim(address _receiver) external override nonReentrant returns (uint256) {
-        if (inPrivateClaimingMode) { revert("RewardTracker: action not enabled"); }
+        if (inPrivateClaimingMode) { 
+            revert AuthorizationError();
+        }
         return _claim(msg.sender, _receiver);
     }
 
@@ -218,7 +224,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         require(_account != address(0), "RewardTracker: mint to the zero address");
 
         totalSupply = totalSupply + _amount;
-        boostedTotalSupply = boostedTotalSupply + (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
+        boostedTotalSupply = boostedTotalSupply + Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
         balances[_account] = balances[_account] + _amount;
 
         emit Transfer(address(0), _account, _amount);
@@ -229,7 +235,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         balances[_account] = balances[_account] - _amount;// "RewardTracker: burn amount exceeds balance"
         totalSupply = totalSupply - _amount;
-        boostedTotalSupply = boostedTotalSupply - (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
+        boostedTotalSupply = boostedTotalSupply - Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
 
         emit Transfer(_account, address(0), _amount);
     }
@@ -268,7 +274,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         _updateRewards(_account);
 
         stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
         
         depositBalances[_account][_depositToken] = depositBalances[_account][_depositToken] + _amount;
         totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] + _amount;
@@ -286,7 +292,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         require(stakedAmounts[_account] >= _amount, "RewardTracker: _amount exceeds stakedAmount");
 
         stakedAmounts[_account] = stakedAmount - _amount;
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
 
         uint256 depositBalance = depositBalances[_account][_depositToken];
         require(depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
@@ -314,7 +320,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         if (_account != address(0)) {
             uint256 boostedStakedAmount = boostedStakedAmounts[_account];
-            uint256 accountReward = Math.mulDiv(boostedStakedAmount, (_cumulativeRewardPerToken - previousCumulatedRewardPerToken[_account]), PRECISION);
+            uint256 accountReward = Math.mulDiv(boostedStakedAmount, _cumulativeRewardPerToken - previousCumulatedRewardPerToken[_account], PRECISION);
             uint256 _claimableReward = claimableReward[_account] + accountReward;
 
             claimableReward[_account] = _claimableReward;

@@ -60,7 +60,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
             return 0;
         }
 
-        uint256 timeDiff = block.timestamp - (lastDistributionTime);
+        uint256 timeDiff = block.timestamp - lastDistributionTime;
         return tokensPerInterval * timeDiff;
     }
 
