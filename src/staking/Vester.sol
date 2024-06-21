@@ -15,16 +15,14 @@ import "../access/Governable.sol";
 contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
     using SafeERC20 for IERC20;
 
+    uint256 public immutable vestingDuration;
+    address public immutable esToken;
+    address public immutable claimableToken;
+    address public immutable override rewardTracker;
+
     string public name;
     string public symbol;
     uint8 public decimals = 18;
-
-    uint256 public vestingDuration;
-
-    address public esToken;
-    address public claimableToken;
-
-    address public override rewardTracker;
 
     uint256 public override totalSupply;
 
