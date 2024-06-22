@@ -31,14 +31,12 @@ contract RewardDistributor_Tester is Test {
         //deploy RewardTracker:
         rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker());
         console2.log(address(rewardTracker)); // 0xa88CdF6f746fdB9dD637666e63a54009A62B8162
-        
-        depositTokens.push(zfiTokenAddress);
-        
+                
         // rewardDsitributor is deployed with ZFI as the reward token
         rewardDistributor = RewardDistributor(deployRewardDistributor());
 
         vm.prank(DEPLOYER_ADDRESS);
-        rewardTracker.initialize(depositTokens, address(rewardDistributor)); 
+        rewardTracker.initialize(zfiTokenAddress, address(rewardDistributor)); 
     }
 
     function deployRewardDistributor() public returns(address rewardDistributorAddress){
@@ -81,7 +79,7 @@ contract RewardDistributor_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), userAmount);
-        rewardTracker.stake(address(zfiToken), userAmount);
+        rewardTracker.stake(userAmount);
         uint256 userBalance = zfiToken.balanceOf(USER1);
         assertEq(0, userBalance);
         
@@ -94,7 +92,7 @@ contract RewardDistributor_Tester is Test {
         assertEq(1 ether, claimRewards);
 
         userBalance = rewardTracker.balanceOf(USER1);
-        assertEq(userBalance + pendingRewards, userBalance);
+        assertEq(userAmount + pendingRewards, userBalance);
         assertEq(userAmount + tokenPerInterval, userBalance);
     }
 
@@ -119,7 +117,7 @@ contract RewardDistributor_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), userAmount);
-        rewardTracker.stake(address(zfiToken), userAmount);
+        rewardTracker.stake(userAmount);
         uint256 userBalance = zfiToken.balanceOf(USER1);
         assertEq(0, userBalance);
 
@@ -128,7 +126,7 @@ contract RewardDistributor_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER2);
         zfiToken.approve(address(rewardTracker), userAmount);
-        rewardTracker.stake(address(zfiToken), userAmount);
+        rewardTracker.stake(userAmount);
         userBalance = zfiToken.balanceOf(USER2);
         assertEq(0, userBalance);
         

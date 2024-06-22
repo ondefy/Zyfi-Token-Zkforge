@@ -111,7 +111,7 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
         // stake the ZFI token for the user
 
-        IRewardTracker(rewardTracker).stakeForAccount(address(this), _receiver, address(claimableToken), balance);
+        IRewardTracker(rewardTracker).stakeForAccount(address(this), _receiver, balance);
 
         _burn(account, balance);
 
@@ -236,7 +236,7 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         _updateVesting(_account);
 
         // unstake for the user
-        IRewardTracker(rewardTracker).unstakeForAccount(_account, claimableToken, _amount, address(this));
+        IRewardTracker(rewardTracker).unstakeForAccount(_account, _amount, address(this));
 
         _mint(_account, _amount);
 

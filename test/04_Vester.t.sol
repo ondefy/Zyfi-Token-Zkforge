@@ -36,11 +36,10 @@ contract Vester_Tester is Test {
         rewardTracker.setGov(TEAM_ADDRESS);
 
         // Enable deposit of stZFI
-        depositTokens.push(address(zfiToken));
         DISTRIBUTOR = deployRewardDistributor();
 
         vm.prank(TEAM_ADDRESS);
-        rewardTracker.initialize(depositTokens, DISTRIBUTOR);     
+        rewardTracker.initialize(address(zfiToken), DISTRIBUTOR);     
 
         vm.prank(DEPLOYER_ADDRESS);
         vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zfiTokenAddress, address(rewardTracker));
@@ -74,7 +73,7 @@ contract Vester_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), amount);
-        rewardTracker.stake(address(zfiToken), amount);
+        rewardTracker.stake(amount);
         vm.stopPrank();
         console2.log(vester.gov());
         vm.prank(TEAM_ADDRESS);
@@ -96,7 +95,7 @@ contract Vester_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), amount);
-        rewardTracker.stake(address(zfiToken), amount);
+        rewardTracker.stake(amount);
         vm.stopPrank();
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
@@ -120,7 +119,7 @@ contract Vester_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), sumRewards);
-        rewardTracker.stake(address(zfiToken), sumRewards);
+        rewardTracker.stake(sumRewards);
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
         vester.setHandler(HANDLER, true);
@@ -159,7 +158,7 @@ contract Vester_Tester is Test {
         // deposit in rewardTracker
         vm.startPrank(USER1);
         zfiToken.approve(address(rewardTracker), sumRewards);
-        rewardTracker.stake(address(zfiToken), sumRewards);
+        rewardTracker.stake(sumRewards);
         vm.startPrank(TEAM_ADDRESS);
         vester.setHasMaxVestableAmount(true);
         vester.setHandler(HANDLER, true);

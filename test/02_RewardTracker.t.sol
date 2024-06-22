@@ -28,10 +28,9 @@ contract RewardTracker_Tester is Test {
         //deploy RewardTracker:
         rewardTracker = RewardTracker(RewardTracker_Tester.deployRewardTracker());
         
-        depositTokens.push(zfiTokenAddress);
         DISTRIBUTOR = deployRewardDistributor();
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardTracker.initialize(depositTokens, DISTRIBUTOR);
+        rewardTracker.initialize(zfiTokenAddress, DISTRIBUTOR);
         vm.stopPrank();
     }
 
@@ -78,7 +77,7 @@ contract RewardTracker_Tester is Test {
 
         vm.startPrank(USER1);
             zfiToken.approve(address(rewardTracker), 2 ether);
-            rewardTracker.stake(address(zfiToken), 2 ether);
+            rewardTracker.stake(2 ether);
         vm.stopPrank();
         uint256 balance = rewardTracker.balanceOf(USER1);
         assertEq(balance, 2 ether);

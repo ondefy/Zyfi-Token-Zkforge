@@ -120,13 +120,13 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
 
     function _stakeZfi(address _fundingAccount, address _account, address _token, uint256 _amount) private {
         require(_amount > 0, "RewardRouter: invalid _amount");
-        IRewardTracker(stakedZfiTracker).stakeForAccount(_fundingAccount, _account, _token, _amount);
+        IRewardTracker(stakedZfiTracker).stakeForAccount(_fundingAccount, _account, _amount);
         emit StakeZfi(_account, _token, _amount);
     }
 
     function _unstakeZfi(address _account, address _token, uint256 _amount) private {
         require(_amount > 0, "RewardRouter: invalid _amount");
-        IRewardTracker(stakedZfiTracker).unstakeForAccount(_account, _token, _amount, _account);
+        IRewardTracker(stakedZfiTracker).unstakeForAccount(_account, _amount, _account);
         emit UnstakeZfi(_account, _token, _amount);
     }
 }
