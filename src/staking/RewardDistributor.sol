@@ -30,12 +30,18 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     constructor(address _rewardToken, address _rewardTracker) {
+        if (_rewardToken == address(0) || _rewardTracker == address(0)) {
+            revert ZeroAddressError();
+        }
         rewardToken = _rewardToken;
         rewardTracker = _rewardTracker;
         admin = msg.sender;
     }
 
     function setAdmin(address _admin) external onlyGov {
+        if (_admin == address(0)) {
+            revert ZeroAddressError();
+        }
         admin = _admin;
         emit AdminSet(_admin);
     }

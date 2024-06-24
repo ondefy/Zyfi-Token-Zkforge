@@ -55,6 +55,13 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         address _claimableToken,
         address _rewardTracker
     ) {
+        if (
+            _esToken == address(0) ||
+            _claimableToken == address(0) ||
+            _rewardTracker == address(0)
+        ) {
+            revert ZeroAddressError();
+        }
         name = _name;
         symbol = _symbol;
 
