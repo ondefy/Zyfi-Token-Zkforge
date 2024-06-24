@@ -94,7 +94,7 @@ contract RewardDistributor_Tester is Test {
         assertEq(1 ether, claimRewards);
 
         userBalance = rewardTracker.balanceOf(USER1);
-        assertEq(userBalance + pendingRewards, userBalance);
+        assertEq(userAmount + pendingRewards, userBalance);
         assertEq(userAmount + tokenPerInterval, userBalance);
     }
 
