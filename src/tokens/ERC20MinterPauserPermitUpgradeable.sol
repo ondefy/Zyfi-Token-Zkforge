@@ -8,14 +8,27 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgradeable {
+contract ERC20MinterPauserPermitUpgradeable is
+    Initializable,
+    ERC20Upgradeable,
+    ERC20BurnableUpgradeable,
+    PausableUpgradeable,
+    AccessControlUpgradeable,
+    ERC20PermitUpgradeable,
+    UUPSUpgradeable
+{
+    event PrivateTransferModeSet(bool value);
+
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant TRANSFERRER_ROLE = keccak256("TRANSFERRER_ROLE");
 
     bool private _inPrivateTransferMode;
 
-    function initialize(string memory name, string memory symbol) initializer public {
+    function initialize(
+        string memory name,
+        string memory symbol
+    ) public initializer {
         __ERC20_init(name, symbol);
         __ERC20Burnable_init();
         __Pausable_init();
@@ -28,7 +41,7 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
         _grantRole(MINTER_ROLE, msg.sender);
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     /**
      * @dev Returns whether the token is in private transfer mode
@@ -40,16 +53,25 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     /**
      * @dev Sets the values for {inPrivateTransferMode}.
      */
-    function setInPrivateTransferMode(bool inPrivateTransferMode_) external onlyRole(DEFAULT_ADMIN_ROLE){
+    function setInPrivateTransferMode(
+        bool inPrivateTransferMode_
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _inPrivateTransferMode = inPrivateTransferMode_;
+        emit PrivateTransferModeSet(inPrivateTransferMode_);
     }
 
     /**
      * @dev overrides transfer method to restrict use to accounts with TRANSFERRER_ROLE while in private transfer mode
      */
-    function transfer(address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
+    function transfer(
+        address to,
+        uint256 amount
+    ) public virtual override whenNotPaused returns (bool) {
         if (_inPrivateTransferMode) {
-            require(hasRole(TRANSFERRER_ROLE, _msgSender()), "AccessControl: account is missing transferrer role to transfer in private transfer mode");
+            require(
+                hasRole(TRANSFERRER_ROLE, _msgSender()),
+                "AccessControl: account is missing transferrer role to transfer in private transfer mode"
+            );
         }
         return super.transfer(to, amount);
     }
@@ -57,12 +79,18 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     /**
      * @dev overrides transferFrom to allow addresses with TRANSFERRER_ROLE to bypass allowance check
      */
-    function transferFrom(address from, address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override whenNotPaused returns (bool) {
         if (hasRole(TRANSFERRER_ROLE, _msgSender())) {
             _transfer(from, to, amount);
             return true;
         } else if (_inPrivateTransferMode) {
-            revert("AccessControl: account is missing transferrer role to transfer in private transfer mode");
+            revert(
+                "AccessControl: account is missing transferrer role to transfer in private transfer mode"
+            );
         }
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
@@ -73,7 +101,10 @@ contract ERC20MinterPauserPermitUpgradeable is Initializable, ERC20Upgradeable, 
     /**
      * @dev overrides burnFrom to remove allowance check and to only be callable by accounts with MINTER_ROLE
      */
-    function burnFrom(address account, uint256 amount) public virtual override onlyRole(MINTER_ROLE){
+    function burnFrom(
+        address account,
+        uint256 amount
+    ) public virtual override onlyRole(MINTER_ROLE) {
         _burn(account, amount);
     }
 
