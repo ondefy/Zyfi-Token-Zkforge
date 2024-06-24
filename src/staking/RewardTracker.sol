@@ -189,7 +189,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function _setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) private {
-        if (_rewardBoostBasisPoints > 100) revert BoostTooHigh();
+        if (_rewardBoostBasisPoints > BASIS_POINTS_DIVISOR) revert BoostTooHigh();
         
         _updateRewards(_account);
 
