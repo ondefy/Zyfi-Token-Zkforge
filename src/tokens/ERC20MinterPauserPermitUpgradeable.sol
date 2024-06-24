@@ -41,7 +41,7 @@ contract ERC20MinterPauserPermitUpgradeable is
         _grantRole(MINTER_ROLE, msg.sender);
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     /**
      * @dev Returns whether the token is in private transfer mode

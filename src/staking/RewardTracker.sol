@@ -395,11 +395,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
             "RewardTracker: invalid _depositToken"
         );
 
-        IERC20(_depositToken).safeTransferFrom(
-            _fundingAccount,
-            address(this),
-            _amount
-        );
+        if (_fundingAccount != address(this)) {
+            IERC20(_depositToken).safeTransferFrom(_fundingAccount, address(this), _amount);
+        }
 
         _updateRewards(_account);
 
