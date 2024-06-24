@@ -16,7 +16,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     error AuthorizationError();
 
-    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
+    uint256 public constant BASIS_POINTS_DIVISOR = 100_00;
     uint256 public constant PRECISION = 1e30;
 
     uint8 public constant decimals = 18;
@@ -406,7 +406,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
         boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
         
-        depositBalances[_account][_depositToken] = depositBalances[_account][_depositToken] + _amount;
+        mapping (address => uint256) storage accountDepositBalances = depositBalances[_account];
+        accountDepositBalances[_depositToken] = accountDepositBalances[_depositToken] + _amount;
         totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] + _amount;
 
         _mint(_account, _amount);
@@ -435,15 +436,11 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         stakedAmounts[_account] = stakedAmount - _amount;
         boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
 
-        uint256 depositBalance = depositBalances[_account][_depositToken];
-        require(
-            depositBalance >= _amount,
-            "RewardTracker: _amount exceeds depositBalance"
-        );
-        depositBalances[_account][_depositToken] = depositBalance - _amount;
-        totalDepositSupply[_depositToken] =
-            totalDepositSupply[_depositToken] -
-            _amount;
+        mapping (address => uint256) storage accountDepositBalances = depositBalances[_account];
+        uint256 _depositBalance = accountDepositBalances[_depositToken];
+        require(_depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
+        accountDepositBalances[_depositToken] = _depositBalance - _amount;
+        totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] - _amount;
 
         _burn(_account, _amount);
         IERC20(_depositToken).safeTransfer(_receiver, _amount);
