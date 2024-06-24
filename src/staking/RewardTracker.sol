@@ -14,7 +14,9 @@ import "../access/Governable.sol";
 contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     using SafeERC20 for IERC20;
 
-    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
+    error AuthorizationError();
+
+    uint256 public constant BASIS_POINTS_DIVISOR = 100_00;
     uint256 public constant PRECISION = 1e30;
 
     uint8 public constant decimals = 18;
@@ -25,29 +27,39 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     string public symbol;
 
     address public distributor;
-    mapping (address => bool) public isDepositToken;
-    mapping (address => mapping (address => uint256)) public override depositBalances;
-    mapping (address => uint256) public totalDepositSupply;
+    mapping(address => bool) public isDepositToken;
+    mapping(address => mapping(address => uint256))
+        public
+        override depositBalances;
+    mapping(address => uint256) public totalDepositSupply;
 
     uint256 public override totalSupply;
     uint256 public override boostedTotalSupply;
-    mapping (address => uint256) public balances;
-    mapping (address => mapping (address => uint256)) public allowances;
+    mapping(address => uint256) public balances;
+    mapping(address => mapping(address => uint256)) public allowances;
 
     uint256 public cumulativeRewardPerToken;
-    mapping (address => uint256) public override rewardBoostsBasisPoints;
-    mapping (address => uint256) public override stakedAmounts;
-    mapping (address => uint256) public override boostedStakedAmounts;
-    mapping (address => uint256) public claimableReward;
-    mapping (address => uint256) public previousCumulatedRewardPerToken;
-    mapping (address => uint256) public override cumulativeRewards;
+    mapping(address => uint256) public override rewardBoostsBasisPoints;
+    mapping(address => uint256) public override stakedAmounts;
+    mapping(address => uint256) public override boostedStakedAmounts;
+    mapping(address => uint256) public claimableReward;
+    mapping(address => uint256) public previousCumulatedRewardPerToken;
+    mapping(address => uint256) public override cumulativeRewards;
 
     bool public inPrivateTransferMode;
     bool public inPrivateStakingMode;
     bool public inPrivateClaimingMode;
-    mapping (address => bool) public isHandler;
+    mapping(address => bool) public isHandler;
 
     event Claim(address receiver, uint256 amount);
+    event HandlerSet(address handler, bool isSet);
+    event DepositTokenSet(address token, bool isDepositToken);
+    event PrivateClaimingModeSet(bool value);
+    event PrivateStakingModeSet(bool value);
+    event PrivateTransferModeSet(bool value);
+    event RewardBoostSet(address account, uint256 rewardBoostBasisPoints);
+
+    error BoostTooHigh();
 
     constructor(string memory _name, string memory _symbol) Governable() {
         name = _name;
@@ -69,32 +81,55 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         distributor = _distributor;
     }
 
-    function setDepositToken(address _depositToken, bool _isDepositToken) external onlyGov {
+    function setDepositToken(
+        address _depositToken,
+        bool _isDepositToken
+    ) external onlyGov {
         isDepositToken[_depositToken] = _isDepositToken;
+        emit DepositTokenSet(_depositToken, _isDepositToken);
     }
 
-    function setInPrivateTransferMode(bool _inPrivateTransferMode) external onlyGov {
+    function setInPrivateTransferMode(
+        bool _inPrivateTransferMode
+    ) external onlyGov {
         inPrivateTransferMode = _inPrivateTransferMode;
+        emit PrivateTransferModeSet(_inPrivateTransferMode);
     }
 
-    function setInPrivateStakingMode(bool _inPrivateStakingMode) external onlyGov {
+    function setInPrivateStakingMode(
+        bool _inPrivateStakingMode
+    ) external onlyGov {
         inPrivateStakingMode = _inPrivateStakingMode;
+        emit PrivateStakingModeSet(_inPrivateStakingMode);
     }
 
-    function setInPrivateClaimingMode(bool _inPrivateClaimingMode) external onlyGov {
+    function setInPrivateClaimingMode(
+        bool _inPrivateClaimingMode
+    ) external onlyGov {
         inPrivateClaimingMode = _inPrivateClaimingMode;
+        emit PrivateClaimingModeSet(_inPrivateClaimingMode);
     }
 
     function setHandler(address _handler, bool _isActive) external onlyGov {
         isHandler[_handler] = _isActive;
+        emit HandlerSet(_handler, _isActive);
     }
 
-    function setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) external onlyGov {
+    function setRewardBoost(
+        address _account,
+        uint256 _rewardBoostBasisPoints
+    ) external onlyGov {
         _setRewardBoost(_account, _rewardBoostBasisPoints);
     }
 
-    function batchSetRewardBoost(address[] memory _accounts, uint256[] memory _rewardBoostBasisPoints) external onlyGov {
-        require(_accounts.length == _rewardBoostBasisPoints.length, "RewardTracker: array length mismatch");
+    function batchSetRewardBoost(
+        address[] memory _accounts,
+        uint256[] memory _rewardBoostBasisPoints
+    ) external onlyGov {
+        require(
+            _accounts.length == _rewardBoostBasisPoints.length,
+            "RewardTracker: array length mismatch"
+        );
 
         for (uint256 i = 0; i < _accounts.length; i++) {
             _setRewardBoost(_accounts[i], _rewardBoostBasisPoints[i]);
@@ -102,45 +137,76 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function rescueFunds(address _token, address _account, uint256 _amount) external onlyGov {
+    function rescueFunds(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
-    function balanceOf(address _account) external view override returns (uint256) {
+    function balanceOf(
+        address _account
+    ) external view override returns (uint256) {
         return balances[_account];
     }
 
     function stake(address _depositToken, uint256 _amount) external override nonReentrant {
-        if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
+        if (inPrivateStakingMode) { 
+            revert AuthorizationError(); 
+        }
         _stake(msg.sender, msg.sender, _depositToken, _amount);
     }
 
-    function stakeForAccount(address _fundingAccount, address _account, address _depositToken, uint256 _amount) external override nonReentrant {
+    function stakeForAccount(
+        address _fundingAccount,
+        address _account,
+        address _depositToken,
+        uint256 _amount
+    ) external override nonReentrant {
         _validateHandler();
         _stake(_fundingAccount, _account, _depositToken, _amount);
     }
 
     // removed the unstake function: only the vester can unstakeForAccount
-    function unstakeForAccount(address _account, address _depositToken, uint256 _amount, address _receiver) external override nonReentrant {
+    function unstakeForAccount(
+        address _account,
+        address _depositToken,
+        uint256 _amount,
+        address _receiver
+    ) external override nonReentrant {
         _validateHandler();
         _unstake(_account, _depositToken, _amount, _receiver);
     }
 
-    function transfer(address _recipient, uint256 _amount) external override returns (bool) {
+    function transfer(
+        address _recipient,
+        uint256 _amount
+    ) external override returns (bool) {
         _transfer(msg.sender, _recipient, _amount);
         return true;
     }
 
-    function allowance(address _owner, address _spender) external view override returns (uint256) {
+    function allowance(
+        address _owner,
+        address _spender
+    ) external view override returns (uint256) {
         return allowances[_owner][_spender];
     }
 
-    function approve(address _spender, uint256 _amount) external override returns (bool) {
+    function approve(
+        address _spender,
+        uint256 _amount
+    ) external override returns (bool) {
         _approve(msg.sender, _spender, _amount);
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override returns (bool) {
+    function transferFrom(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) external override returns (bool) {
         if (isHandler[msg.sender]) {
             _transfer(_sender, _recipient, _amount);
             return true;
@@ -152,7 +218,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         return true;
     }
 
-    function tokensPerInterval() external override view returns (uint256) {
+    function tokensPerInterval() external view override returns (uint256) {
         return IRewardDistributor(distributor).tokensPerInterval();
     }
 
@@ -161,24 +227,41 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function claim(address _receiver) external override nonReentrant returns (uint256) {
-        if (inPrivateClaimingMode) { revert("RewardTracker: action not enabled"); }
+        if (inPrivateClaimingMode) { 
+            revert AuthorizationError();
+        }
         return _claim(msg.sender, _receiver);
     }
 
-    function claimForAccount(address _account, address _receiver) external override nonReentrant returns (uint256) {
+    function claimForAccount(
+        address _account,
+        address _receiver
+    ) external override nonReentrant returns (uint256) {
         _validateHandler();
         return _claim(_account, _receiver);
     }
 
-    function claimable(address _account) public override view returns (uint256) {
+    function claimable(
+        address _account
+    ) public view override returns (uint256) {
         uint256 boostedStakedAmount = boostedStakedAmounts[_account];
         if (boostedStakedAmount == 0) {
             return claimableReward[_account];
         }
-        uint256 pendingRewards = Math.mulDiv(IRewardDistributor(distributor).pendingRewards(), PRECISION, boostedTotalSupply);
-        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken + pendingRewards;
+        uint256 pendingRewards = Math.mulDiv(
+            IRewardDistributor(distributor).pendingRewards(),
+            PRECISION,
+            boostedTotalSupply
+        );
+        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken +
+            pendingRewards;
 
-        uint256 rewards = Math.mulDiv(boostedStakedAmount, nextCumulativeRewardPerToken - previousCumulatedRewardPerToken[_account], PRECISION);
+        uint256 rewards = Math.mulDiv(
+            boostedStakedAmount,
+            nextCumulativeRewardPerToken -
+                previousCumulatedRewardPerToken[_account],
+            PRECISION
+        );
         return claimableReward[_account] + rewards;
     }
 
@@ -187,17 +270,29 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function _setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) private {
-        //TODO: set a maximum boost value ?
-        
+        if (_rewardBoostBasisPoints > 100) revert BoostTooHigh();
+
         _updateRewards(_account);
 
         rewardBoostsBasisPoints[_account] = _rewardBoostBasisPoints;
-        uint256 nextBoostedStakedAmount = Math.mulDiv(stakedAmounts[_account], BASIS_POINTS_DIVISOR + _rewardBoostBasisPoints, BASIS_POINTS_DIVISOR);
-        boostedTotalSupply = boostedTotalSupply - boostedStakedAmounts[_account] + nextBoostedStakedAmount;
+        uint256 nextBoostedStakedAmount = Math.mulDiv(
+            stakedAmounts[_account],
+            BASIS_POINTS_DIVISOR + _rewardBoostBasisPoints,
+            BASIS_POINTS_DIVISOR
+        );
+        boostedTotalSupply =
+            boostedTotalSupply -
+            boostedStakedAmounts[_account] +
+            nextBoostedStakedAmount;
         boostedStakedAmounts[_account] = nextBoostedStakedAmount;
+
+        emit RewardBoostSet(_account, _rewardBoostBasisPoints);
     }
 
-    function _claim(address _account, address _receiver) private returns (uint256) {
+    function _claim(
+        address _account,
+        address _receiver
+    ) private returns (uint256) {
         _updateRewards(_account);
 
         uint256 tokenAmount = claimableReward[_account];
@@ -205,7 +300,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         if (tokenAmount > 0) {
             // stake for the user
-            address _depositToken = IRewardDistributor(distributor).rewardToken();
+            address _depositToken = IRewardDistributor(distributor)
+                .rewardToken();
             IERC20(_depositToken).approve(address(this), tokenAmount);
             _stake(address(this), _receiver, _depositToken, tokenAmount);
             emit Claim(_account, tokenAmount);
@@ -215,40 +311,68 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function _mint(address _account, uint256 _amount) internal {
-        require(_account != address(0), "RewardTracker: mint to the zero address");
+        require(
+            _account != address(0),
+            "RewardTracker: mint to the zero address"
+        );
 
         totalSupply = totalSupply + _amount;
-        boostedTotalSupply = boostedTotalSupply + (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
+        boostedTotalSupply = boostedTotalSupply + Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
         balances[_account] = balances[_account] + _amount;
 
         emit Transfer(address(0), _account, _amount);
     }
 
     function _burn(address _account, uint256 _amount) internal {
-        require(_account != address(0), "RewardTracker: burn from the zero address");
+        require(
+            _account != address(0),
+            "RewardTracker: burn from the zero address"
+        );
 
-        balances[_account] = balances[_account] - _amount;// "RewardTracker: burn amount exceeds balance"
+        balances[_account] = balances[_account] - _amount; // "RewardTracker: burn amount exceeds balance"
         totalSupply = totalSupply - _amount;
-        boostedTotalSupply = boostedTotalSupply - (Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR));
+        boostedTotalSupply = boostedTotalSupply - Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
 
         emit Transfer(_account, address(0), _amount);
     }
 
-    function _transfer(address _sender, address _recipient, uint256 _amount) private {
-        require(_sender != address(0), "RewardTracker: transfer from the zero address");
-        require(_recipient != address(0), "RewardTracker: transfer to the zero address");
+    function _transfer(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) private {
+        require(
+            _sender != address(0),
+            "RewardTracker: transfer from the zero address"
+        );
+        require(
+            _recipient != address(0),
+            "RewardTracker: transfer to the zero address"
+        );
 
-        if (inPrivateTransferMode) { _validateHandler(); }
+        if (inPrivateTransferMode) {
+            _validateHandler();
+        }
 
         balances[_sender] = balances[_sender] - _amount; //"RewardTracker: transfer amount exceeds balance");
         balances[_recipient] = balances[_recipient] + _amount;
 
-        emit Transfer(_sender, _recipient,_amount);
+        emit Transfer(_sender, _recipient, _amount);
     }
 
-    function _approve(address _owner, address _spender, uint256 _amount) private {
-        require(_owner != address(0), "RewardTracker: approve from the zero address");
-        require(_spender != address(0), "RewardTracker: approve to the zero address");
+    function _approve(
+        address _owner,
+        address _spender,
+        uint256 _amount
+    ) private {
+        require(
+            _owner != address(0),
+            "RewardTracker: approve from the zero address"
+        );
+        require(
+            _spender != address(0),
+            "RewardTracker: approve to the zero address"
+        );
 
         allowances[_owner][_spender] = _amount;
 
@@ -259,38 +383,61 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         require(isHandler[msg.sender], "RewardTracker: forbidden");
     }
 
-    function _stake(address _fundingAccount, address _account, address _depositToken, uint256 _amount) private {
+    function _stake(
+        address _fundingAccount,
+        address _account,
+        address _depositToken,
+        uint256 _amount
+    ) private {
         require(_amount > 0, "RewardTracker: invalid _amount");
-        require(isDepositToken[_depositToken], "RewardTracker: invalid _depositToken");
+        require(
+            isDepositToken[_depositToken],
+            "RewardTracker: invalid _depositToken"
+        );
 
-        IERC20(_depositToken).safeTransferFrom(_fundingAccount, address(this), _amount);
+        if (_fundingAccount != address(this)) {
+            IERC20(_depositToken).safeTransferFrom(_fundingAccount, address(this), _amount);
+        }
 
         _updateRewards(_account);
 
         stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
         
-        depositBalances[_account][_depositToken] = depositBalances[_account][_depositToken] + _amount;
+        mapping (address => uint256) storage accountDepositBalances = depositBalances[_account];
+        accountDepositBalances[_depositToken] = accountDepositBalances[_depositToken] + _amount;
         totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] + _amount;
 
         _mint(_account, _amount);
     }
 
-    function _unstake(address _account, address _depositToken, uint256 _amount, address _receiver) private {
+    function _unstake(
+        address _account,
+        address _depositToken,
+        uint256 _amount,
+        address _receiver
+    ) private {
         require(_amount > 0, "RewardTracker: invalid _amount");
-        require(isDepositToken[_depositToken], "RewardTracker: invalid _depositToken");
+        require(
+            isDepositToken[_depositToken],
+            "RewardTracker: invalid _depositToken"
+        );
 
         _updateRewards(_account);
 
         uint256 stakedAmount = stakedAmounts[_account];
-        require(stakedAmounts[_account] >= _amount, "RewardTracker: _amount exceeds stakedAmount");
+        require(
+            stakedAmounts[_account] >= _amount,
+            "RewardTracker: _amount exceeds stakedAmount"
+        );
 
         stakedAmounts[_account] = stakedAmount - _amount;
-        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
+        boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account], BASIS_POINTS_DIVISOR);
 
-        uint256 depositBalance = depositBalances[_account][_depositToken];
-        require(depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
-        depositBalances[_account][_depositToken] = depositBalance - _amount;
+        mapping (address => uint256) storage accountDepositBalances = depositBalances[_account];
+        uint256 _depositBalance = accountDepositBalances[_depositToken];
+        require(_depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
+        accountDepositBalances[_depositToken] = _depositBalance - _amount;
         totalDepositSupply[_depositToken] = totalDepositSupply[_depositToken] - _amount;
 
         _burn(_account, _amount);
@@ -302,7 +449,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         uint256 _cumulativeRewardPerToken = cumulativeRewardPerToken;
         if (boostedTotalSupply > 0 && blockReward > 0) {
-            _cumulativeRewardPerToken = _cumulativeRewardPerToken + Math.mulDiv(blockReward, PRECISION, boostedTotalSupply);
+            _cumulativeRewardPerToken =
+                _cumulativeRewardPerToken +
+                Math.mulDiv(blockReward, PRECISION, boostedTotalSupply);
             cumulativeRewardPerToken = _cumulativeRewardPerToken;
         }
 
@@ -314,14 +463,17 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
         if (_account != address(0)) {
             uint256 boostedStakedAmount = boostedStakedAmounts[_account];
-            uint256 accountReward = Math.mulDiv(boostedStakedAmount, (_cumulativeRewardPerToken - previousCumulatedRewardPerToken[_account]), PRECISION);
+            uint256 accountReward = Math.mulDiv(boostedStakedAmount, _cumulativeRewardPerToken - previousCumulatedRewardPerToken[_account], PRECISION);
             uint256 _claimableReward = claimableReward[_account] + accountReward;
 
             claimableReward[_account] = _claimableReward;
-            previousCumulatedRewardPerToken[_account] = _cumulativeRewardPerToken;
+            previousCumulatedRewardPerToken[
+                _account
+            ] = _cumulativeRewardPerToken;
 
             if (_claimableReward > 0 && boostedStakedAmounts[_account] > 0) {
-                uint256 nextCumulativeReward = cumulativeRewards[_account] + accountReward;
+                uint256 nextCumulativeReward = cumulativeRewards[_account] +
+                    accountReward;
 
                 cumulativeRewards[_account] = nextCumulativeReward;
             }
