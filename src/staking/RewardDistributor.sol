@@ -20,6 +20,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
 
     address public admin;
 
+    event AdminSet(address newAdmin);
     event Distribute(uint256 amount);
     event TokensPerIntervalChange(uint256 amount);
 
@@ -29,17 +30,28 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     constructor(address _rewardToken, address _rewardTracker) {
+        if (_rewardToken == address(0) || _rewardTracker == address(0)) {
+            revert ZeroAddressError();
+        }
         rewardToken = _rewardToken;
         rewardTracker = _rewardTracker;
         admin = msg.sender;
     }
 
     function setAdmin(address _admin) external onlyGov {
+        if (_admin == address(0)) {
+            revert ZeroAddressError();
+        }
         admin = _admin;
+        emit AdminSet(_admin);
     }
 
     // to help users who accidentally send their tokens to this contract
-    function rescueFunds(address _token, address _account, uint256 _amount) external onlyGov {
+    function rescueFunds(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
@@ -49,7 +61,10 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
 
     /// @notice Interval is 1 second
     function setTokensPerInterval(uint256 _amount) external onlyAdmin {
-        require(lastDistributionTime != 0, "RewardDistributor: invalid lastDistributionTime");
+        require(
+            lastDistributionTime != 0,
+            "RewardDistributor: invalid lastDistributionTime"
+        );
         IRewardTracker(rewardTracker).updateRewards();
         tokensPerInterval = _amount;
         emit TokensPerIntervalChange(_amount);
@@ -65,14 +80,21 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     function distribute() external override returns (uint256) {
-        require(msg.sender == rewardTracker, "RewardDistributor: invalid msg.sender");
+        require(
+            msg.sender == rewardTracker,
+            "RewardDistributor: invalid msg.sender"
+        );
         uint256 amount = pendingRewards();
-        if (amount == 0) { return 0; }
+        if (amount == 0) {
+            return 0;
+        }
 
         lastDistributionTime = block.timestamp;
 
         uint256 balance = IERC20(rewardToken).balanceOf(address(this));
-        if (amount > balance) { amount = balance; }
+        if (amount > balance) {
+            amount = balance;
+        }
 
         IERC20(rewardToken).safeTransfer(msg.sender, amount);
 
