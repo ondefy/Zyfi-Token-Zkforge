@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 contract Governable {
+    event GovSet(address newGov);
+
     address public gov;
 
     constructor() {
@@ -16,5 +18,6 @@ contract Governable {
 
     function setGov(address _gov) external onlyGov {
         gov = _gov;
+        emit GovSet(_gov);
     }
 }
