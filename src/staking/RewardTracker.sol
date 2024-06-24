@@ -57,6 +57,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     event PrivateTransferModeSet(bool value);
     event RewardBoostSet(address account, uint256 rewardBoostBasisPoints);
 
+    error BoostTooHigh();
+
     constructor(string memory _name, string memory _symbol) Governable() {
         name = _name;
         symbol = _symbol;
@@ -270,11 +272,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         return IRewardDistributor(distributor).rewardToken();
     }
 
-    function _setRewardBoost(
-        address _account,
-        uint256 _rewardBoostBasisPoints
-    ) private {
-        //TODO: set a maximum boost value ?
+    function _setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) private {
+        if (_rewardBoostBasisPoints > 100) revert BoostTooHigh();
 
         _updateRewards(_account);
 
