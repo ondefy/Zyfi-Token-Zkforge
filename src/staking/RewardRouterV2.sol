@@ -99,7 +99,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         bool _shouldStakeZfi,
         bool _shouldClaimStZfi,
         bool _shouldStakeStZfi
-    ) external nonReentrant {
+    ) external nonReentrant returns (uint256 stZfiAmount) {
         address account = msg.sender;
 
         uint256 zfiAmount = 0;
@@ -111,7 +111,6 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
             _stakeZfi(account, account, zfi, zfiAmount);
         }
 
-        uint256 stZfiAmount = 0;
         if (_shouldClaimStZfi) {
             stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(
                 account,
