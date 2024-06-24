@@ -49,6 +49,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     event Claim(address receiver, uint256 amount);
 
+    error BoostTooHigh();
+
     constructor(string memory _name, string memory _symbol) Governable() {
         name = _name;
         symbol = _symbol;
@@ -187,7 +189,7 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function _setRewardBoost(address _account, uint256 _rewardBoostBasisPoints) private {
-        //TODO: set a maximum boost value ?
+        if (_rewardBoostBasisPoints > 100) revert BoostTooHigh();
         
         _updateRewards(_account);
 
