@@ -20,6 +20,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
 
     address public admin;
 
+    event AdminSet(address newAdmin);
     event Distribute(uint256 amount);
     event TokensPerIntervalChange(uint256 amount);
 
@@ -42,6 +43,7 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
             revert ZeroAddressError();
         }
         admin = _admin;
+        emit AdminSet(_admin);
     }
 
     // to help users who accidentally send their tokens to this contract

@@ -44,6 +44,8 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
     event Claim(address receiver, uint256 amount);
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 claimedAmount, uint256 balance);
+    event HandlerSet(address handler, bool isActive);
+    event HasMaxVestableAmountSet(bool hasMaxVestableAmount);
 
     constructor(
         string memory _name,
@@ -77,12 +79,14 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
     function setHandler(address _handler, bool _isActive) external onlyGov {
         isHandler[_handler] = _isActive;
+        emit HandlerSet(_handler, _isActive);
     }
 
     function setHasMaxVestableAmount(
         bool _hasMaxVestableAmount
     ) external onlyGov {
         hasMaxVestableAmount = _hasMaxVestableAmount;
+        emit HasMaxVestableAmountSet(_hasMaxVestableAmount);
     }
 
     function deposit(uint256 _amount) external nonReentrant {

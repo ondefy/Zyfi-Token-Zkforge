@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 contract Governable {
     error ZeroAddressError();
+    event GovSet(address newGov);
 
     address public gov;
 
@@ -21,5 +22,6 @@ contract Governable {
             revert ZeroAddressError();
         }
         gov = _gov;
+        emit GovSet(_gov);
     }
 }
