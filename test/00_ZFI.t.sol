@@ -62,6 +62,8 @@ contract ZFI_test is Test {
     }
 
     function test_Upgrade() public {
+        test_GiveAdminRoleAway();
+        vm.startPrank(TEAM_ADDRESS);
         address newImplem =  address(new ZFIToken());
         bytes memory data = "";
         zfiToken.upgradeToAndCall(newImplem, data);
