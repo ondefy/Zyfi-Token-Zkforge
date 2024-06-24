@@ -127,21 +127,6 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         }
     }
 
-    function _validateReceiver(address _receiver) private view {
-        require(
-            IRewardTracker(stakedZfiTracker).cumulativeRewards(_receiver) == 0,
-            "RewardRouter: stakedZfiTracker.cumulativeRewards > 0"
-        );
-        require(
-            IVester(zfiVester).transferredCumulativeRewards(_receiver) == 0,
-            "RewardRouter: zfiVester.transferredCumulativeRewards > 0"
-        );
-        require(
-            IERC20(zfiVester).balanceOf(_receiver) == 0,
-            "RewardRouter: zfiVester.balance > 0"
-        );
-    }
-
     function _compound(address _account) private {
         _compoundZfi(_account);
     }
