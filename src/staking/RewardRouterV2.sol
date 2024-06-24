@@ -17,7 +17,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
 
     address public zfi;
 
-    address public stakedZfiTracker; //TODO: test this file + remove references to old names
+    address public stakedZfiTracker;
 
     address public zfiVester;
 
@@ -97,8 +97,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     function handleRewards(
         bool _shouldClaimZfi,
         bool _shouldStakeZfi,
-        bool _shouldClaimStZfi,
-        bool _shouldStakeStZfi
+        bool _shouldClaimStZfi
     ) external nonReentrant returns (uint256 stZfiAmount) {
         address account = msg.sender;
 
@@ -132,10 +131,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     function _compoundZfi(address _account) private {
-        uint256 stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(
-            _account,
-            _account
-        );
+        IRewardTracker(stakedZfiTracker).claimForAccount(_account, _account);
     }
 
     function _stakeZfi(

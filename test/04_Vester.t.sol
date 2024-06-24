@@ -35,7 +35,7 @@ contract Vester_Tester is Test {
         vm.prank(DEPLOYER_ADDRESS);
         rewardTracker.setGov(TEAM_ADDRESS);
 
-        // Enable deposit of stZFI
+        // Enable deposit of ZFI
         depositTokens.push(address(zfiToken));
         DISTRIBUTOR = deployRewardDistributor();
 
