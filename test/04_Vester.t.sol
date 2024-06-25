@@ -31,7 +31,7 @@ contract Vester_Tester is Test {
         zfiToken = ZFIToken(zfiTokenAddress);
 
         //deploy RewardTracker:
-        rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker());
+        rewardTracker = RewardTracker(rewardTrackerDeployer.deployRewardTracker(zfiTokenAddress));
         vm.prank(DEPLOYER_ADDRESS);
         rewardTracker.setGov(TEAM_ADDRESS);
 
@@ -39,7 +39,7 @@ contract Vester_Tester is Test {
         DISTRIBUTOR = deployRewardDistributor();
 
         vm.prank(TEAM_ADDRESS);
-        rewardTracker.initialize(address(zfiToken), DISTRIBUTOR);     
+        rewardTracker.initialize(DISTRIBUTOR);
 
         vm.prank(DEPLOYER_ADDRESS);
         vester = new Vester("staked ZFI", "stZFI", vestingDuration, address(rewardTracker), zfiTokenAddress, address(rewardTracker));

@@ -26,17 +26,17 @@ contract RewardTracker_Tester is Test {
         zfiToken = ZFIToken(zfiTokenAddress);
 
         //deploy RewardTracker:
-        rewardTracker = RewardTracker(RewardTracker_Tester.deployRewardTracker());
+        rewardTracker = RewardTracker(RewardTracker_Tester.deployRewardTracker(zfiTokenAddress));
         
         DISTRIBUTOR = deployRewardDistributor();
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardTracker.initialize(zfiTokenAddress, DISTRIBUTOR);
+        rewardTracker.initialize(DISTRIBUTOR);
         vm.stopPrank();
     }
 
-    function deployRewardTracker() public returns(address rewardTrackerAddress){
+    function deployRewardTracker(address zfiTokenAddress) public returns(address rewardTrackerAddress){
         vm.startPrank(DEPLOYER_ADDRESS);
-        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY"));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY", zfiTokenAddress));
         console2.log(rewardTrackerAddress);
         vm.stopPrank();
     }

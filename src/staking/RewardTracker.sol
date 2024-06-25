@@ -23,9 +23,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     string public name;
     string public symbol;
+    address immutable public depositToken;
 
     address public distributor;
-    address public depositToken;
     mapping (address => mapping (address => uint256)) public override depositBalances;
     mapping (address => uint256) public totalDepositSupply;
 
@@ -49,19 +49,19 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
 
     event Claim(address receiver, uint256 amount);
 
-    constructor(string memory _name, string memory _symbol) Governable() {
+    constructor(string memory _name, string memory _symbol, address _depositToken) Governable() {
         name = _name;
         symbol = _symbol;
+        depositToken = _depositToken;
     }
 
     function initialize(
-        address _depositToken,
         address _distributor
     ) external onlyGov {
         require(!isInitialized, "RewardTracker: already initialized");
         isInitialized = true;
 
-        depositToken = _depositToken;
+        
 
         distributor = _distributor;
     }
