@@ -26,8 +26,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     address immutable public depositToken;
 
     address public distributor;
-    mapping (address => mapping (address => uint256)) public override depositBalances;
-    mapping (address => uint256) public totalDepositSupply;
+    mapping (address => uint256) public override depositBalances;
+    uint256 public totalDepositSupply;
 
     uint256 public override totalSupply;
     uint256 public override boostedTotalSupply;
@@ -261,8 +261,8 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
         boostedStakedAmounts[_account] = boostedStakedAmounts[_account] + Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
         
-        depositBalances[_account][depositToken] = depositBalances[_account][depositToken] + _amount;
-        totalDepositSupply[depositToken] = totalDepositSupply[depositToken] + _amount;
+        depositBalances[_account] = depositBalances[_account] + _amount;
+        totalDepositSupply = totalDepositSupply + _amount;
 
         _mint(_account, _amount);
     }
@@ -278,10 +278,10 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
         stakedAmounts[_account] = stakedAmount - _amount;
         boostedStakedAmounts[_account] = boostedStakedAmounts[_account] - Math.mulDiv(_amount, (BASIS_POINTS_DIVISOR + rewardBoostsBasisPoints[_account]), BASIS_POINTS_DIVISOR);
 
-        uint256 depositBalance = depositBalances[_account][depositToken];
+        uint256 depositBalance = depositBalances[_account];
         require(depositBalance >= _amount, "RewardTracker: _amount exceeds depositBalance");
-        depositBalances[_account][depositToken] = depositBalance - _amount;
-        totalDepositSupply[depositToken] = totalDepositSupply[depositToken] - _amount;
+        depositBalances[_account] = depositBalance - _amount;
+        totalDepositSupply = totalDepositSupply - _amount;
 
         _burn(_account, _amount);
         IERC20(depositToken).safeTransfer(_receiver, _amount);
