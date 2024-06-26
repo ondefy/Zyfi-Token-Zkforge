@@ -17,11 +17,11 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
 
     address public zfi;
 
-    address public stakedZfiTracker; //TODO: test this file + remove references to old names
+    address public stakedZfiTracker;
 
     address public zfiVester;
 
-    mapping (address => address) public pendingReceivers;
+    mapping(address => address) public pendingReceivers;
 
     event StakeZfi(address account, uint256 amount);
     event UnstakeZfi(address account, uint256 amount);
@@ -32,6 +32,13 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         address _zfiVester
     ) external onlyGov {
         require(!isInitialized, "RewardRouter: already initialized");
+        if (
+            _zfi == address(0) ||
+            _stakedZfiTracker == address(0) ||
+            _zfiVester == address(0)
+        ) {
+            revert ZeroAddressError();
+        }
         isInitialized = true;
 
         zfi = _zfi;
@@ -42,7 +49,11 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function rescueFunds(address _token, address _account, uint256 _amount) external onlyGov {
+    function rescueFunds(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
@@ -70,16 +81,17 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
         _compound(msg.sender);
     }
 
-    function compoundForAccount(address _account) external nonReentrant onlyGov {
+    function compoundForAccount(
+        address _account
+    ) external nonReentrant onlyGov {
         _compound(_account);
     }
 
     function handleRewards(
         bool _shouldClaimZfi,
         bool _shouldStakeZfi,
-        bool _shouldClaimStZfi,
-        bool _shouldStakeStZfi
-    ) external nonReentrant {
+        bool _shouldClaimStZfi
+    ) external nonReentrant returns (uint256 stZfiAmount) {
         address account = msg.sender;
 
         uint256 zfiAmount = 0;
@@ -91,22 +103,20 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
             _stakeZfi(account, account, zfiAmount);
         }
 
-        uint256 stZfiAmount = 0;
         if (_shouldClaimStZfi) {
-            stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(account, account);
+            stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(
+                account,
+                account
+            );
         }
     }
 
-    function batchCompoundForAccounts(address[] memory _accounts) external nonReentrant onlyGov {
+    function batchCompoundForAccounts(
+        address[] memory _accounts
+    ) external nonReentrant onlyGov {
         for (uint256 i = 0; i < _accounts.length; i++) {
             _compound(_accounts[i]);
         }
-    }
-
-    function _validateReceiver(address _receiver) private view {
-        require(IRewardTracker(stakedZfiTracker).cumulativeRewards(_receiver) == 0, "RewardRouter: stakedZfiTracker.cumulativeRewards > 0");
-        require(IVester(zfiVester).transferredCumulativeRewards(_receiver) == 0, "RewardRouter: zfiVester.transferredCumulativeRewards > 0");
-        require(IERC20(zfiVester).balanceOf(_receiver) == 0, "RewardRouter: zfiVester.balance > 0");
     }
 
     function _compound(address _account) private {
@@ -114,7 +124,7 @@ contract RewardRouterV2 is ReentrancyGuard, Governable {
     }
 
     function _compoundZfi(address _account) private {
-        uint256 stZfiAmount = IRewardTracker(stakedZfiTracker).claimForAccount(_account, _account);
+        IRewardTracker(stakedZfiTracker).claimForAccount(_account, _account);
     }
 
     function _stakeZfi(address _fundingAccount, address _account, uint256 _amount) private {

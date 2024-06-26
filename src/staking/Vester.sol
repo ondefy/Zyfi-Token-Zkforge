@@ -15,37 +15,37 @@ import "../access/Governable.sol";
 contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
     using SafeERC20 for IERC20;
 
+    uint256 public immutable vestingDuration;
+    address public immutable esToken;
+    address public immutable claimableToken;
+    address public immutable override rewardTracker;
+
     string public name;
     string public symbol;
     uint8 public decimals = 18;
-
-    uint256 public vestingDuration;
-
-    address public esToken;
-    address public claimableToken;
-
-    address public override rewardTracker;
 
     uint256 public override totalSupply;
 
     bool public hasMaxVestableAmount;
 
-    mapping (address => uint256) public balances;
-    mapping (address => uint256) public override cumulativeClaimAmounts;
-    mapping (address => uint256) public override claimedAmounts;
-    mapping (address => uint256) public lastVestingTimes;
+    mapping(address => uint256) public balances;
+    mapping(address => uint256) public override cumulativeClaimAmounts;
+    mapping(address => uint256) public override claimedAmounts;
+    mapping(address => uint256) public lastVestingTimes;
 
-    mapping (address => uint256) public override transferredCumulativeRewards;
-    mapping (address => uint256) public override cumulativeRewardDeductions;
-    mapping (address => uint256) public override bonusRewards;
+    mapping(address => uint256) public override transferredCumulativeRewards;
+    mapping(address => uint256) public override cumulativeRewardDeductions;
+    mapping(address => uint256) public override bonusRewards;
 
-    mapping (address => bool) public isHandler;
+    mapping(address => bool) public isHandler;
 
     event Claim(address receiver, uint256 amount);
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 claimedAmount, uint256 balance);
+    event HandlerSet(address handler, bool isActive);
+    event HasMaxVestableAmountSet(bool hasMaxVestableAmount);
 
-    constructor (
+    constructor(
         string memory _name,
         string memory _symbol,
         uint256 _vestingDuration,
@@ -53,6 +53,13 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         address _claimableToken,
         address _rewardTracker
     ) {
+        if (
+            _esToken == address(0) ||
+            _claimableToken == address(0) ||
+            _rewardTracker == address(0)
+        ) {
+            revert ZeroAddressError();
+        }
         name = _name;
         symbol = _symbol;
 
@@ -70,17 +77,24 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
     function setHandler(address _handler, bool _isActive) external onlyGov {
         isHandler[_handler] = _isActive;
+        emit HandlerSet(_handler, _isActive);
     }
 
-    function setHasMaxVestableAmount(bool _hasMaxVestableAmount) external onlyGov {
+    function setHasMaxVestableAmount(
+        bool _hasMaxVestableAmount
+    ) external onlyGov {
         hasMaxVestableAmount = _hasMaxVestableAmount;
+        emit HasMaxVestableAmountSet(_hasMaxVestableAmount);
     }
 
     function deposit(uint256 _amount) external nonReentrant {
         _deposit(msg.sender, _amount);
     }
 
-    function depositForAccount(address _account, uint256 _amount) external nonReentrant {
+    function depositForAccount(
+        address _account,
+        uint256 _amount
+    ) external nonReentrant {
         _validateHandler();
         _deposit(_account, _amount);
     }
@@ -89,13 +103,20 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         return _claim(msg.sender, msg.sender);
     }
 
-    function claimForAccount(address _account, address _receiver) external override nonReentrant returns (uint256) {
+    function claimForAccount(
+        address _account,
+        address _receiver
+    ) external override nonReentrant returns (uint256) {
         _validateHandler();
         return _claim(_account, _receiver);
     }
 
     // to help users who accidentally send their tokens to this contract
-    function rescueFunds(address _token, address _account, uint256 _amount) external onlyGov {
+    function rescueFunds(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
@@ -112,7 +133,6 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         // stake the ZFI token for the user
 
         IRewardTracker(rewardTracker).stakeForAccount(address(this), _receiver, balance);
-
         _burn(account, balance);
 
         delete cumulativeClaimAmounts[account];
@@ -122,13 +142,21 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         emit Withdraw(account, claimedAmount, balance);
     }
 
-    function transferStakeValues(address _sender, address _receiver) external override nonReentrant {
+    function transferStakeValues(
+        address _sender,
+        address _receiver
+    ) external override nonReentrant {
         _validateHandler();
 
-        uint256 transferredCumulativeReward = transferredCumulativeRewards[_sender];
-        uint256 cumulativeReward = IRewardTracker(rewardTracker).cumulativeRewards(_sender);
+        uint256 transferredCumulativeReward = transferredCumulativeRewards[
+            _sender
+        ];
+        uint256 cumulativeReward = IRewardTracker(rewardTracker)
+            .cumulativeRewards(_sender);
 
-        transferredCumulativeRewards[_receiver] = transferredCumulativeReward + cumulativeReward;
+        transferredCumulativeRewards[_receiver] =
+            transferredCumulativeReward +
+            cumulativeReward;
         cumulativeRewardDeductions[_sender] = cumulativeReward;
         transferredCumulativeRewards[_sender] = 0;
 
@@ -136,42 +164,66 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         bonusRewards[_sender] = 0;
     }
 
-    function setTransferredCumulativeRewards(address _account, uint256 _amount) external override nonReentrant {
+    function setTransferredCumulativeRewards(
+        address _account,
+        uint256 _amount
+    ) external override nonReentrant {
         _validateHandler();
         transferredCumulativeRewards[_account] = _amount;
     }
 
-    function setCumulativeRewardDeductions(address _account, uint256 _amount) external override nonReentrant {
+    function setCumulativeRewardDeductions(
+        address _account,
+        uint256 _amount
+    ) external override nonReentrant {
         _validateHandler();
         cumulativeRewardDeductions[_account] = _amount;
     }
 
-    function setBonusRewards(address _account, uint256 _amount) external override nonReentrant {
+    function setBonusRewards(
+        address _account,
+        uint256 _amount
+    ) external override nonReentrant {
         _validateHandler();
         bonusRewards[_account] = _amount;
     }
 
-    function claimable(address _account) public override view returns (uint256) {
-        uint256 amount = cumulativeClaimAmounts[_account] - claimedAmounts[_account];
+    function claimable(
+        address _account
+    ) public view override returns (uint256) {
+        uint256 amount = cumulativeClaimAmounts[_account] -
+            claimedAmounts[_account];
         uint256 nextClaimable = _getNextClaimableAmount(_account);
         return amount + nextClaimable;
     }
 
-    function getMaxVestableAmount(address _account) public override view returns (uint256) {
-        if (!hasRewardTracker()) { return 0; }
-
-        uint256 transferredCumulativeReward = transferredCumulativeRewards[_account];
-        uint256 bonusReward = bonusRewards[_account];
-        uint256 cumulativeReward = IRewardTracker(rewardTracker).cumulativeRewards(_account);
-        uint256 maxVestableAmount = cumulativeReward + transferredCumulativeReward + bonusReward;
-
-        uint256 cumulativeRewardDeduction = cumulativeRewardDeductions[_account];
-
-        if (maxVestableAmount < cumulativeRewardDeduction) {
+    function getMaxVestableAmount(
+        address _account
+    ) public view override returns (uint256) {
+        if (!hasRewardTracker()) {
             return 0;
         }
 
-        return maxVestableAmount - cumulativeRewardDeduction;
+        uint256 transferredCumulativeReward = transferredCumulativeRewards[
+            _account
+        ];
+        uint256 bonusReward = bonusRewards[_account];
+        uint256 cumulativeReward = IRewardTracker(rewardTracker)
+            .cumulativeRewards(_account);
+        uint256 maxVestableAmount = cumulativeReward +
+            transferredCumulativeReward +
+            bonusReward;
+
+        uint256 cumulativeRewardDeduction = cumulativeRewardDeductions[
+            _account
+        ];
+
+        unchecked {
+            if (maxVestableAmount < cumulativeRewardDeduction) {
+                return 0;
+            }
+            return maxVestableAmount - cumulativeRewardDeduction;
+        }
     }
 
     function hasRewardTracker() public view returns (bool) {
@@ -182,31 +234,48 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         return balances[_account] + cumulativeClaimAmounts[_account];
     }
 
-    function balanceOf(address _account) public view override returns (uint256) {
+    function balanceOf(
+        address _account
+    ) public view override returns (uint256) {
         return balances[_account];
     }
 
     // empty implementation, tokens are non-transferrable
-    function transfer(address /* recipient */, uint256 /* amount */) public pure override returns (bool) {
+    function transfer(
+        address /* recipient */,
+        uint256 /* amount */
+    ) public pure override returns (bool) {
         revert("Vester: non-transferrable");
     }
 
     // empty implementation, tokens are non-transferrable
-    function allowance(address /* owner */, address /* spender */) public view virtual override returns (uint256) {
+    function allowance(
+        address /* owner */,
+        address /* spender */
+    ) public view virtual override returns (uint256) {
         return 0;
     }
 
     // empty implementation, tokens are non-transferrable
-    function approve(address /* spender */, uint256 /* amount */) public virtual override returns (bool) {
+    function approve(
+        address /* spender */,
+        uint256 /* amount */
+    ) public virtual override returns (bool) {
         revert("Vester: non-transferrable");
     }
 
     // empty implementation, tokens are non-transferrable
-    function transferFrom(address /* sender */, address /* recipient */, uint256 /* amount */) public virtual override returns (bool) {
+    function transferFrom(
+        address /* sender */,
+        address /* recipient */,
+        uint256 /* amount */
+    ) public virtual override returns (bool) {
         revert("Vester: non-transferrable");
     }
 
-    function getVestedAmount(address _account) public override view returns (uint256) {
+    function getVestedAmount(
+        address _account
+    ) public view override returns (uint256) {
         uint256 balance = balances[_account];
         uint256 cumulativeClaimAmount = cumulativeClaimAmounts[_account];
         return balance + cumulativeClaimAmount;
@@ -224,7 +293,7 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
     function _burn(address _account, uint256 _amount) private {
         require(_account != address(0), "Vester: burn from the zero address");
 
-        balances[_account] = balances[_account] - _amount;// "Vester: burn amount exceeds balance"
+        balances[_account] = balances[_account] - _amount; // "Vester: burn amount exceeds balance"
         totalSupply = totalSupply - _amount;
 
         emit Transfer(_account, address(0), _amount);
@@ -242,7 +311,10 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
         if (hasMaxVestableAmount) {
             uint256 maxAmount = getMaxVestableAmount(_account);
-            require(getTotalVested(_account) <= maxAmount, "Vester: max vestable amount exceeded");
+            require(
+                getTotalVested(_account) <= maxAmount,
+                "Vester: max vestable amount exceeded"
+            );
         }
 
         emit Deposit(_account, _amount);
@@ -258,17 +330,27 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
 
         // transfer claimableAmount from balances to cumulativeClaimAmounts
         _burn(_account, amount);
-        cumulativeClaimAmounts[_account] = cumulativeClaimAmounts[_account] + amount;
+        cumulativeClaimAmounts[_account] =
+            cumulativeClaimAmounts[_account] +
+            amount;
     }
 
-    function _getNextClaimableAmount(address _account) private view returns (uint256) {
+    function _getNextClaimableAmount(
+        address _account
+    ) private view returns (uint256) {
         uint256 timeDiff = block.timestamp - lastVestingTimes[_account];
 
         uint256 balance = balances[_account];
-        if (balance == 0) { return 0; }
+        if (balance == 0) {
+            return 0;
+        }
 
         uint256 vestedAmount = getVestedAmount(_account);
-        uint256 claimableAmount = Math.mulDiv(vestedAmount, timeDiff, vestingDuration);
+        uint256 claimableAmount = Math.mulDiv(
+            vestedAmount,
+            timeDiff,
+            vestingDuration
+        );
 
         if (claimableAmount < balance) {
             return claimableAmount;
@@ -277,7 +359,10 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         return balance;
     }
 
-    function _claim(address _account, address _receiver) private returns (uint256) {
+    function _claim(
+        address _account,
+        address _receiver
+    ) private returns (uint256) {
         _updateVesting(_account);
         uint256 amount = claimable(_account);
         claimedAmounts[_account] = claimedAmounts[_account] + amount;
