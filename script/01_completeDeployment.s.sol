@@ -49,7 +49,7 @@ contract ZfiScript is Script {
         // Initialize
         // and enable deposit of ZFI
         depositTokens.push(ZFI);
-        RewardTracker(rewardTracker).initialize(depositTokens, rewardDistributor);
+        RewardTracker(rewardTracker).initialize(rewardDistributor);
 
         vester = deployVester();
 
@@ -82,7 +82,7 @@ contract ZfiScript is Script {
     }
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
-        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY"));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY", ZFI));
         console2.log("RewardTracker is deploy at : ");
         console2.log(rewardTrackerAddress);
     }
