@@ -96,9 +96,10 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
             amount = balance;
         }
 
-        IERC20(rewardToken).safeTransfer(msg.sender, amount);
-
-        emit Distribute(amount);
+        if (amount != 0) {
+            IERC20(rewardToken).safeTransfer(msg.sender, amount);
+            emit Distribute(amount);
+        }
         return amount;
     }
 }

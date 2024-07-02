@@ -15,6 +15,15 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     using SafeERC20 for IERC20;
 
     error AuthorizationError();
+    error BoostTooHigh();
+
+    event Claim(address receiver, uint256 amount);
+    event HandlerSet(address handler, bool isSet);
+    event DepositTokenSet(address token, bool isDepositToken);
+    event PrivateClaimingModeSet(bool value);
+    event PrivateStakingModeSet(bool value);
+    event PrivateTransferModeSet(bool value);
+    event RewardBoostSet(address account, uint256 rewardBoostBasisPoints);
 
     uint256 public constant BASIS_POINTS_DIVISOR = 100_00;
     uint256 public constant PRECISION = 1e30;
@@ -49,16 +58,6 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     bool public inPrivateClaimingMode;
     mapping(address => bool) public isHandler;
 
-    event Claim(address receiver, uint256 amount);
-    event HandlerSet(address handler, bool isSet);
-    event DepositTokenSet(address token, bool isDepositToken);
-    event PrivateClaimingModeSet(bool value);
-    event PrivateStakingModeSet(bool value);
-    event PrivateTransferModeSet(bool value);
-    event RewardBoostSet(address account, uint256 rewardBoostBasisPoints);
-
-    error BoostTooHigh();
-
     constructor(string memory _name, string memory _symbol, address _depositToken) Governable() {
         name = _name;
         symbol = _symbol;
@@ -70,9 +69,6 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     ) external onlyGov {
         require(!isInitialized, "RewardTracker: already initialized");
         isInitialized = true;
-
-        
-
         distributor = _distributor;
     }
 
@@ -137,7 +133,9 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     }
 
     function stake(uint256 _amount) external override nonReentrant {
-        if (inPrivateStakingMode) { revert("RewardTracker: action not enabled"); }
+        if (inPrivateStakingMode) { 
+            revert AuthorizationError();
+        }
         _stake(msg.sender, msg.sender, _amount);
     }
 
@@ -356,7 +354,10 @@ contract RewardTracker is IERC20, ReentrancyGuard, IRewardTracker, Governable {
     function _stake(address _fundingAccount, address _account, uint256 _amount) private {
         require(_amount > 0, "RewardTracker: invalid _amount");
 
-        IERC20(depositToken).safeTransferFrom(_fundingAccount, address(this), _amount);
+        if (_fundingAccount != address(this)) {
+            IERC20(depositToken).safeTransferFrom(_fundingAccount, address(this), _amount);
+        }
+
         _updateRewards(_account);
 
         stakedAmounts[_account] = stakedAmounts[_account] + (_amount);
