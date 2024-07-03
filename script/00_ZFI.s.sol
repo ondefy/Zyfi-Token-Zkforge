@@ -30,7 +30,6 @@ contract ZfiScript is Script {
         //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
         console2.log("Token address is: ");
         console2.log(PROXY);
-        ZFIToken(PROXY).initialize2(GOV_ADDRESS);
         vm.stopBroadcast();
     }
 }
