@@ -10,7 +10,7 @@ import {RewardDistributor} from "../src/staking/RewardDistributor.sol";
 import {Vester} from "../src/staking/Vester.sol";
 import {RewardRouterV2} from "../src/staking/RewardRouterV2.sol";
 
-contract ZfiScript is Script {
+contract ZfiStakingScript is Script {
     // Constants
     address ADMIN_ADDRESS;
     address GOV_ADDRESS;
