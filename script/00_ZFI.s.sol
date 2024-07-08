@@ -19,17 +19,35 @@ contract ZfiScript is Script {
     function run() public {
         
         vm.startBroadcast(deployerPrivateKey);
-        //TODO: fix the deployement via openzeppelin Upgrades
-        // address proxy = Upgrades.deployUUPSProxy(
-        // "ZFIToken.sol",
-        // abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS)));
 
-        // In the meantime, unsafe deployment:
+        // PROXY = Upgrades.deployUUPSProxy("ZFIToken.sol", abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS)));
+
         address ZFITokenImplementation = address(new ZFIToken());
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
-        //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
+
         console2.log("Token address is: ");
         console2.log(PROXY);
+
         vm.stopBroadcast();
     }
+
+    // function run_old() public {
+        
+    //     vm.startBroadcast(deployerPrivateKey);
+
+    //     //TODO: fix the deployement via openzeppelin Upgrades
+    //     // address proxy = Upgrades.deployUUPSProxy(
+    //     // "ZFIToken.sol",
+    //     // abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS)));
+
+    //     // In the meantime, unsafe deployment:
+    //     address ZFITokenImplementation = address(new ZFIToken());
+    //     PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
+
+    //     //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
+    //     console2.log("Token address is: ");
+    //     console2.log(PROXY);
+
+    //     vm.stopBroadcast();
+    // }
 }

@@ -10,12 +10,12 @@ import {RewardDistributor} from "../src/staking/RewardDistributor.sol";
 import {Vester} from "../src/staking/Vester.sol";
 import {RewardRouterV2} from "../src/staking/RewardRouterV2.sol";
 
-contract ZfiScript is Script {
+contract ZfiScript2 is Script {
     // Constants
-    address ADMIN_ADDRESS;
-    address GOV_ADDRESS;
-    address DEPLOYER_ADDRESS;
-    address ZFI;
+    address ADMIN_ADDRESS = 0x19596e1D6cd97916514B5DBaA4730781eFE49975;
+    address GOV_ADDRESS = 0x19596e1D6cd97916514B5DBaA4730781eFE49975;
+    address DEPLOYER_ADDRESS = 0x19596e1D6cd97916514B5DBaA4730781eFE49975;
+    address ZFI = 0xd3eE79A156F59e8b40A2e0A6834F4Fd5229de70D;
     uint256 deployerPrivateKey;
     uint256 vestingDuration;
 
@@ -29,11 +29,8 @@ contract ZfiScript is Script {
     address rewardRouterV2;
 
     function setUp() public {
-        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        //TODO: set a duration period (6, 12, 24 months)
-        vestingDuration = 0;
+        vestingDuration = 7 days;
     }
 
     function run() public {
@@ -42,12 +39,10 @@ contract ZfiScript is Script {
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
-
         // deploy distributor
         rewardDistributor = deployRewardDistributor();
 
-        // Initialize
-        // and enable deposit of ZFI
+        // Initialize and enable deposit of ZFI
         depositTokens.push(ZFI);
         RewardTracker(rewardTracker).initialize(rewardDistributor);
 
@@ -73,7 +68,6 @@ contract ZfiScript is Script {
 
         // To avoid stZFI being tranferable: set RewardTracker in privateTransferMode
         RewardTracker(rewardTracker).setInPrivateTransferMode(true);
-
 
         transferAdminAndGovRights();
 

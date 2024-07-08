@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {RewardTracker} from "src/staking/RewardTracker.sol";
+import {RewardTracker} from "../src/staking/RewardTracker.sol";
 import {ZFI_test, ZFIToken} from "./00_ZFI.t.sol";
-import {RewardDistributor} from "src/staking/RewardDistributor.sol";
+import {RewardDistributor} from "../src/staking/RewardDistributor.sol";
 
 contract RewardTracker_Tester is Test {
     address TEAM_ADDRESS = makeAddr("TEAM_ADDRESS");
