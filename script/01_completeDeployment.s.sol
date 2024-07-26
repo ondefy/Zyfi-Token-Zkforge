@@ -31,9 +31,13 @@ contract ZfiStakingScript is Script {
     function setUp() public {
         ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
 
-        //TODO: set a duration period (6, 12, 24 months)
-        vestingDuration = 0;
+        // update this address in the .env
+        ZFI = vm.envAddress("ZFI_TOKEN");
+
+        // set a duration period (6 months)
+        vestingDuration = 26 weeks;
     }
 
     function run() public {
@@ -42,15 +46,14 @@ contract ZfiStakingScript is Script {
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
-
         // deploy distributor
         rewardDistributor = deployRewardDistributor();
 
-        // Initialize
-        // and enable deposit of ZFI
+        // Initialize and enable deposit of ZFI
         depositTokens.push(ZFI);
         RewardTracker(rewardTracker).initialize(rewardDistributor);
 
+        // Deploy Vester
         vester = deployVester();
 
         // Deploy the RewardRouterV2
@@ -69,12 +72,13 @@ contract ZfiStakingScript is Script {
         Vester(vester).setHandler(rewardRouterV2, true);
 
         // Choose to set a limit to how much tokens each user can unstake
-        // Vester(vester).setHasMaxVestableAmount(_hasMaxVestableAmount);
+        bool hasMaxVestableAmount = false;
+        Vester(vester).setHasMaxVestableAmount(hasMaxVestableAmount);
 
         // To avoid stZFI being tranferable: set RewardTracker in privateTransferMode
         RewardTracker(rewardTracker).setInPrivateTransferMode(true);
 
-
+        // Set the Admin and Gov rights
         transferAdminAndGovRights();
 
         // fund the distributor with ZFI
@@ -82,7 +86,7 @@ contract ZfiStakingScript is Script {
     }
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
-        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY", ZFI));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFI", ZFI));
         console2.log("RewardTracker is deploy at : ");
         console2.log(rewardTrackerAddress);
     }
@@ -118,6 +122,4 @@ contract ZfiStakingScript is Script {
         // RewardRouterV2
         RewardRouterV2(rewardRouterV2).setGov(GOV_ADDRESS);
     }
-
-
 }
