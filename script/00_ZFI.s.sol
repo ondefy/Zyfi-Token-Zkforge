@@ -9,7 +9,6 @@ import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 contract ZfiScript is Script {
     address GOV_ADDRESS;
     address PROXY;
-    uint256 deployerPrivateKey;
 
     function setUp() public {}
 
