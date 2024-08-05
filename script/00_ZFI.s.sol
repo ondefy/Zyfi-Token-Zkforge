@@ -11,14 +11,12 @@ contract ZfiScript is Script {
     address PROXY;
     uint256 deployerPrivateKey;
 
-    function setUp() public {
-        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    }
+    function setUp() public {}
 
     function run() public {
         
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
+        GOV_ADDRESS = msg.sender;
 
         address ZFITokenImplementation = address(new ZFIToken());
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
