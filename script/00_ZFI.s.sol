@@ -21,6 +21,9 @@ contract ZfiScript is Script {
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
         console2.log("Token address is: ");
         console2.log(PROXY);
+        ZFIToken token = ZFIToken(PROXY);
+        token.mint(GOV_ADDRESS, 250_000 ether);
         vm.stopBroadcast();
     }
+
 }
