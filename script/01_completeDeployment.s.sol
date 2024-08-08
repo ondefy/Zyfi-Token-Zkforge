@@ -19,9 +19,6 @@ contract ZfiStakingScript is Script {
     uint256 deployerPrivateKey;
     uint256 vestingDuration;
 
-    // Variables:
-    address[] depositTokens;
-
     // To Be Deployed:
     address rewardTracker; // is also the address of stZFI
     address rewardDistributor;
@@ -29,20 +26,17 @@ contract ZfiStakingScript is Script {
     address rewardRouterV2;
 
     function setUp() public {
-        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
-
         // update this address in the .env
         ZFI = vm.envAddress("ZFI_TOKEN");
 
         // set a duration period (6 months)
-        vestingDuration = 26 weeks;
+        vestingDuration = 1 weeks;
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
-
+        vm.startBroadcast();
+        GOV_ADDRESS = msg.sender;
+        ADMIN_ADDRESS = msg.sender;
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
@@ -50,7 +44,6 @@ contract ZfiStakingScript is Script {
         rewardDistributor = deployRewardDistributor();
 
         // Initialize and enable deposit of ZFI
-        depositTokens.push(ZFI);
         RewardTracker(rewardTracker).initialize(rewardDistributor);
 
         // Deploy Vester
@@ -86,7 +79,7 @@ contract ZfiStakingScript is Script {
     }
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
-        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFI", ZFI));
+        rewardTrackerAddress = address(new RewardTracker("staked TTT", "stTTT", ZFI));
         console2.log("RewardTracker is deploy at : ");
         console2.log(rewardTrackerAddress);
     }
@@ -98,7 +91,7 @@ contract ZfiStakingScript is Script {
     }
 
     function deployVester() public returns(address vesterAddress){
-        vesterAddress = address(new Vester("vested staked ZFI", "vstZFI", vestingDuration, rewardTracker, ZFI, rewardTracker));
+        vesterAddress = address(new Vester("vested staked TTT", "vstTTT", vestingDuration, rewardTracker, ZFI, rewardTracker));
         console2.log("Vester is deploy at : ");
         console2.log(vesterAddress);
     }
