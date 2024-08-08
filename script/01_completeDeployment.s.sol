@@ -14,13 +14,8 @@ contract ZfiStakingScript is Script {
     // Constants
     address ADMIN_ADDRESS;
     address GOV_ADDRESS;
-    address DEPLOYER_ADDRESS;
     address ZFI;
-    uint256 deployerPrivateKey;
     uint256 vestingDuration;
-
-    // Variables:
-    address[] depositTokens;
 
     // To Be Deployed:
     address rewardTracker; // is also the address of stZFI
@@ -30,7 +25,6 @@ contract ZfiStakingScript is Script {
 
     function setUp() public {
         ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
 
         // update this address in the .env
@@ -41,7 +35,7 @@ contract ZfiStakingScript is Script {
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
