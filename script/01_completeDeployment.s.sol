@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 import {RewardTracker} from "../src/staking/RewardTracker.sol";
@@ -35,8 +34,8 @@ contract ZfiStakingScript is Script {
 
     function run() public {
         vm.startBroadcast();
-        GOV_ADDRESS = msg.sender;
-        ADMIN_ADDRESS = msg.sender;
+        GOV_ADDRESS = 0xea571612053f23471BAF7A573B6541eA54D9EE05;
+        ADMIN_ADDRESS = 0xea571612053f23471BAF7A573B6541eA54D9EE05;
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
@@ -108,6 +107,7 @@ contract ZfiStakingScript is Script {
         // RewardDistributor
         RewardDistributor(rewardDistributor).setAdmin(ADMIN_ADDRESS);
         RewardDistributor(rewardDistributor).setGov(GOV_ADDRESS);
+
         // RewardTracker
         RewardTracker(rewardTracker).setGov(GOV_ADDRESS);
         // Vester
