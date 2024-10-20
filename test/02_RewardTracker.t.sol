@@ -196,17 +196,99 @@ contract RewardTracker_Tester is Test {
         assertEq(rewardTracker.balanceOf(USER1), 1 ether);
     }
 
-    //TODO: rescueFunds
+    // getVotes + self delegate
+    function test_getVotes() public setGov(TEAM_ADDRESS) {
+        uint256 amount = 10_000 ether;
+        assertEq(rewardTracker.getVotes(USER1), 0);
+        deal(address(zfiToken), USER1, amount);
+        vm.startPrank(USER1);
+        rewardTracker.delegate(USER1);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(amount);
+        vm.warp(block.timestamp + 1 days);
+        assertEq(rewardTracker.getVotes(USER1), amount);
+        assertEq(rewardTracker.delegates(USER1), USER1);
+        address handler = makeAddr("handler");
+        vm.startPrank(TEAM_ADDRESS);
+        rewardTracker.setHandler(handler, true);
+        vm.startPrank(handler);
+        // unstake user's ZFI
+        rewardTracker.unstakeForAccount(USER1, amount, USER1);
+        //check if user's votes are 0
+        assertEq(rewardTracker.getVotes(USER1), 0);
+    }
 
-    //TODO: claimForAccount
+    // check that the votes are transfered after a transfer of stZFI
+    function test_transfer() public setGov(TEAM_ADDRESS) {
+        uint256 amount = 10_000 ether;
+        deal(address(zfiToken), USER1, amount);
+        vm.startPrank(USER1);
+        rewardTracker.delegate(USER1);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(amount);
+        vm.warp(block.timestamp + 1 days);
+        assertEq(rewardTracker.getVotes(USER1), amount);
+        assertEq(rewardTracker.delegates(USER1), USER1);
+        // transfer stZFI to handler
+        address handler = makeAddr("handler");
+        rewardTracker.transfer(handler, amount);
+        vm.startPrank(handler);
+        rewardTracker.delegate(handler);
+        //check if handler's votes are equal to the amount
+        assertEq(rewardTracker.getVotes(handler), amount);
+        assertEq(rewardTracker.delegates(handler), handler);
+    }
 
-    //TODO: unstakeForAccount
+    // getPastVotes
+    function test_getPastVotes() public {
+        uint256 amount = 10_000 ether;
+        deal(address(zfiToken), USER1, amount);
+        vm.startPrank(USER1);
+        rewardTracker.delegate(USER1);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(amount);
+        assertEq(rewardTracker.getVotes(USER1), amount);
+        assertEq(rewardTracker.delegates(USER1), USER1);
+        vm.warp(block.timestamp + 1 days);
+        // transfer stZFI to handler
+        address handler = makeAddr("handler");
+        rewardTracker.transfer(handler, amount);
+        vm.startPrank(handler);
+        rewardTracker.delegate(handler);
+        //check if handler's votes are equal to the amount
+        assertEq(rewardTracker.getVotes(handler), amount);
+        assertEq(rewardTracker.delegates(handler), handler);
+        vm.warp(block.timestamp + 2 days);
+        assertEq(rewardTracker.getPastVotes(USER1, block.timestamp - 2 days - 1), amount);
+    }
 
-    //
-    // tokensPerInterval
-    // updateRewards
-
-    // + restaked asset for rewards in ETH and rewards in ZFI
-
-
+    //TODO: getPastTotalSupply
+    // stake as the user1 and 2 days later stake as the handler, then check the past total supply
+    function test_getPastTotalSupply() public {
+        uint256 amount = 10_000 ether;
+        deal(address(zfiToken), USER1, amount);
+        vm.startPrank(USER1);
+        rewardTracker.delegate(USER1);
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(amount);
+        assertEq(rewardTracker.getVotes(USER1), amount);
+        assertEq(rewardTracker.delegates(USER1), USER1);
+        vm.warp(block.timestamp + 1 days);
+        // transfer stZFI to handler
+        address handler = makeAddr("handler");
+        vm.warp(block.timestamp + 1 days);
+        vm.startPrank(handler);
+        // deal to handler
+        deal(address(zfiToken), handler, amount);
+        // stake as handler
+        zfiToken.approve(address(rewardTracker), amount);
+        rewardTracker.stake(amount);
+        rewardTracker.delegate(handler);
+        //check if handler's votes are equal to the amount
+        assertEq(rewardTracker.getVotes(handler), amount);
+        assertEq(rewardTracker.delegates(handler), handler);
+        //get current total supply
+        assertEq(rewardTracker.totalSupply(), amount * 2);
+        assertEq(rewardTracker.getPastTotalSupply(block.timestamp - 1 days - 1), amount);
+    }
 }
