@@ -26,9 +26,9 @@ contract ZFI_test is Test {
         vm.stopPrank();
     }
 
-    function deploy_ZFI() public returns(address ZFY_proxy_address){
+    function deploy_ZFI() public returns(address ZFI_proxy_address){
         address ZFITokenImplementation = address(new ZFIToken());
-        ZFY_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
+        ZFI_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
     }
 
     function test_GiveAdminRoleAway() public {

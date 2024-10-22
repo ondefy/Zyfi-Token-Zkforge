@@ -6,7 +6,7 @@ This project involves the development of Solidity contracts to implement the tok
 
 1. **Staking for ZFI Token**
    - Allows users to stake ZFI tokens to get stZFI.
-   - Supports the minting of a non-transferable stZFY token.
+   - Supports the minting of a non-transferable stZFI token.
    - Enables the distribution of ZFI rewards and yield in an ERC20 token.
    - Implements a cooldown period for users wishing to withdraw from the staking contract (6, 12 or 24 months).
 
@@ -20,7 +20,7 @@ The Staking contract facilitates staking of ZFI tokens and provides functionalit
 Key Features:
 
 - Staking ZFI tokens.
-- Minting stZFY tokens.
+- Minting stZFI tokens.
 - Distributing rewards in an ERC20 token.
 - Implementing a cooldown period for withdrawals.
 
