@@ -29,13 +29,13 @@ contract ZfiStakingScript is Script {
         ZFI = vm.envAddress("ZFI_TOKEN");
 
         // set a duration period (6 months)
-        vestingDuration = 1 weeks;
+        vestingDuration = 26 weeks;
     }
 
     function run() public {
         vm.startBroadcast();
-        GOV_ADDRESS = 0xea571612053f23471BAF7A573B6541eA54D9EE05;
-        ADMIN_ADDRESS = 0xea571612053f23471BAF7A573B6541eA54D9EE05;
+        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
+        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
@@ -78,7 +78,7 @@ contract ZfiStakingScript is Script {
     }
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
-        rewardTrackerAddress = address(new RewardTracker("staked TTT", "stTTT", ZFI));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFI", ZFI));
         console2.log("RewardTracker is deploy at : ");
         console2.log(rewardTrackerAddress);
     }
@@ -90,7 +90,7 @@ contract ZfiStakingScript is Script {
     }
 
     function deployVester() public returns(address vesterAddress){
-        vesterAddress = address(new Vester("vested staked TTT", "vstTTT", vestingDuration, rewardTracker, ZFI, rewardTracker));
+        vesterAddress = address(new Vester("vested ZFI", "vstZFI", vestingDuration, rewardTracker, ZFI, rewardTracker));
         console2.log("Vester is deploy at : ");
         console2.log(vesterAddress);
     }
