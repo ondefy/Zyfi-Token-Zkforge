@@ -20,8 +20,13 @@ contract ZfiScript is Script {
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
         console2.log("Token address is: ");
         console2.log(PROXY);
-        ZFIToken token = ZFIToken(PROXY);
-        token.mint(GOV_ADDRESS, 250_000_000 ether);
+        //TODO: add mints here using (Merkledrop mint is in MerkleDrop script)
+        // mintToken(GOV_ADDRESS, 1 ether);
         vm.stopBroadcast();
+    }
+
+    function mintToken(address _to, uint256 _amount) internal {
+        ZFIToken token = ZFIToken(PROXY);
+        token.mint(_to, _amount);
     }
 }

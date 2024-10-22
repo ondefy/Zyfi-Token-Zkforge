@@ -15,8 +15,8 @@ contract ZfiStakingScript is Script {
     address GOV_ADDRESS;
     address DEPLOYER_ADDRESS;
     address ZFI;
-    uint256 deployerPrivateKey;
     uint256 vestingDuration;
+    bool HAS_MAX_VESTABLE_AMOUNT;
 
     // To Be Deployed:
     address rewardTracker; // is also the address of stZFI
@@ -25,8 +25,11 @@ contract ZfiStakingScript is Script {
     address rewardRouterV2;
 
     function setUp() public {
-        // update this address in the .env
+        // update those addresses in the .env
         ZFI = vm.envAddress("ZFI_TOKEN");
+        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
+        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
+        HAS_MAX_VESTABLE_AMOUNT = vm.envBool("HAS_MAX_VESTABLE_AMOUNT"); // set to be false
 
         // set a duration period (6 months)
         vestingDuration = 26 weeks;
@@ -34,8 +37,7 @@ contract ZfiStakingScript is Script {
 
     function run() public {
         vm.startBroadcast();
-        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
-        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
+        
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
@@ -64,8 +66,7 @@ contract ZfiStakingScript is Script {
         Vester(vester).setHandler(rewardRouterV2, true);
 
         // Choose to set a limit to how much tokens each user can unstake
-        bool hasMaxVestableAmount = false;
-        Vester(vester).setHasMaxVestableAmount(hasMaxVestableAmount);
+        Vester(vester).setHasMaxVestableAmount(HAS_MAX_VESTABLE_AMOUNT);
 
         // To avoid stZFI being tranferable: set RewardTracker in privateTransferMode
         RewardTracker(rewardTracker).setInPrivateTransferMode(true);
