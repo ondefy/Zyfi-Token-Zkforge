@@ -14,10 +14,7 @@ contract RewardRouter is Test {
         TEAM_ADDRESS = makeAddr("TEAM_ADDRESS");
         DEPLOYER_ADDRESS = makeAddr("DEPLOYER_ADDRESS");
         deal(DEPLOYER_ADDRESS, 2 ether);
-        vm.startPrank(DEPLOYER_ADDRESS);
-
-        // rewardRouter = new RewardRouterV2();
-        // rewardRouter.initialize(address(ZFIToken), address(esZfyToken));     
+        vm.startPrank(DEPLOYER_ADDRESS);   
         vm.stopPrank();
     }
 
