@@ -12,7 +12,7 @@ contract ZFIToken is ERC20MinterPauserPermitUpgradeable {
      * @param _ONDEFYDAO the address of the owner
      */
     function initialize2(address _ONDEFYDAO) public initializer {
-        super.initialize("Test Token", "TTT");
+        super.initialize("ZFI Token", "ZFI");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
 
