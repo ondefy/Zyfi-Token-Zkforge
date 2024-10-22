@@ -1,7 +1,7 @@
 # Compiler files
 cache/
 out/
-deployment/
+deployment/*
 
 # Ignores development broadcast logs
 !/broadcast
