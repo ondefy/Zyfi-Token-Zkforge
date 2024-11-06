@@ -16,19 +16,13 @@ contract ZFI_test is Test {
         deal(DEPLOYER_ADDRESS, 2 ether);
         vm.startPrank(DEPLOYER_ADDRESS);
 
-        //TODO: fix the deployement via openzeppelin Upgrades
-        // address proxy = Upgrades.deployUUPSProxy(
-        // "ZFIToken.sol",
-        // abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS)));
-
-        // In the meantime, unsafe deployment:
         zfiToken = ZFIToken(deploy_ZFI());
         vm.stopPrank();
     }
 
-    function deploy_ZFI() public returns(address ZFY_proxy_address){
+    function deploy_ZFI() public returns(address ZFI_proxy_address){
         address ZFITokenImplementation = address(new ZFIToken());
-        ZFY_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
+        ZFI_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
     }
 
     function test_GiveAdminRoleAway() public {
@@ -66,6 +60,9 @@ contract ZFI_test is Test {
         vm.startPrank(TEAM_ADDRESS);
         address newImplem =  address(new ZFIToken());
         bytes memory data = "";
+        zfiToken.upgradeToAndCall(newImplem, data);
+        vm.startPrank(DEPLOYER_ADDRESS);
+        vm.expectRevert();
         zfiToken.upgradeToAndCall(newImplem, data);
     }
 }

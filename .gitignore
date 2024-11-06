@@ -3,18 +3,15 @@ cache/
 cache-zk/
 out/
 zkout/
+deployment/*
 
 # Ignores development broadcast logs
 !/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+/broadcast/*
+broadcast/
 
 # Docs
 docs/
-
-# Dotenv file
-.env
-node_modules
 
 node_modules
 .env
@@ -34,3 +31,4 @@ node_modules
 
 # Hardhat Ignition default folder for deployments against a local node
 ignition/deployments/chain-31337
+node_modules/

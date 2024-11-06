@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 import {RewardTracker} from "../src/staking/RewardTracker.sol";
@@ -18,9 +17,7 @@ contract ZfiScript2 is Script {
     address ZFI = 0xd3eE79A156F59e8b40A2e0A6834F4Fd5229de70D;
     uint256 deployerPrivateKey;
     uint256 vestingDuration;
-
-    // Variables:
-    address[] depositTokens;
+    bool HAS_MAX_VESTABLE_AMOUNT;
 
     // To Be Deployed:
     address rewardTracker; // is also the address of stZFI
@@ -30,12 +27,14 @@ contract ZfiScript2 is Script {
 
     function setUp() public {
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vestingDuration = 7 days;
+        // set a duration period (6 months)
+        vestingDuration = 2 days;
+        // vestingDuration = 26 weeks;
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
-
+        vm.startBroadcast();
+        
         // deploy rewardTracker
         rewardTracker = deployRewardTracker();
         
@@ -43,9 +42,9 @@ contract ZfiScript2 is Script {
         rewardDistributor = deployRewardDistributor();
 
         // Initialize and enable deposit of ZFI
-        depositTokens.push(ZFI);
         RewardTracker(rewardTracker).initialize(rewardDistributor);
 
+        // Deploy Vester
         vester = deployVester();
 
         // Deploy the RewardRouterV2
@@ -64,11 +63,12 @@ contract ZfiScript2 is Script {
         Vester(vester).setHandler(rewardRouterV2, true);
 
         // Choose to set a limit to how much tokens each user can unstake
-        // Vester(vester).setHasMaxVestableAmount(_hasMaxVestableAmount);
+        Vester(vester).setHasMaxVestableAmount(HAS_MAX_VESTABLE_AMOUNT);
 
         // To avoid stZFI being tranferable: set RewardTracker in privateTransferMode
         RewardTracker(rewardTracker).setInPrivateTransferMode(true);
 
+        // Set the Admin and Gov rights
         transferAdminAndGovRights();
 
         // fund the distributor with ZFI
@@ -76,7 +76,7 @@ contract ZfiScript2 is Script {
     }
 
     function deployRewardTracker() public returns(address rewardTrackerAddress){
-        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFY", ZFI));
+        rewardTrackerAddress = address(new RewardTracker("staked ZFI", "stZFI", ZFI));
         console2.log("RewardTracker is deploy at : ");
         console2.log(rewardTrackerAddress);
     }
@@ -88,7 +88,7 @@ contract ZfiScript2 is Script {
     }
 
     function deployVester() public returns(address vesterAddress){
-        vesterAddress = address(new Vester("vested staked ZFI", "vstZFI", vestingDuration, rewardTracker, ZFI, rewardTracker));
+        vesterAddress = address(new Vester("vested ZFI", "vstZFI", vestingDuration, rewardTracker, ZFI, rewardTracker));
         console2.log("Vester is deploy at : ");
         console2.log(vesterAddress);
     }
@@ -105,6 +105,7 @@ contract ZfiScript2 is Script {
         // RewardDistributor
         RewardDistributor(rewardDistributor).setAdmin(ADMIN_ADDRESS);
         RewardDistributor(rewardDistributor).setGov(GOV_ADDRESS);
+
         // RewardTracker
         RewardTracker(rewardTracker).setGov(GOV_ADDRESS);
         // Vester
@@ -112,6 +113,4 @@ contract ZfiScript2 is Script {
         // RewardRouterV2
         RewardRouterV2(rewardRouterV2).setGov(GOV_ADDRESS);
     }
-
-
 }
