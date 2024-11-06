@@ -58,7 +58,6 @@ contract RewardDistributor_Tester is Test {
         _;
     }
 
-
     function test_distributeRewardsOneUser() public setGov(TEAM_ADDRESS) {
         uint256 distributorAmount = 10000 ether;
         uint256 userAmount = 10 ether;
@@ -159,4 +158,12 @@ contract RewardDistributor_Tester is Test {
         assertEq(userAmount + pendingRewards/2, userBalance);
         assertEq(userAmount + tokenPerInterval/2, userBalance);
     }
+
+    //TODO: setAdmin
+
+    //TODO: rescueFunds
+
+    //TODO: updateLastDistributionTime
+
+    //TODO: setTokensPerInterval
 }

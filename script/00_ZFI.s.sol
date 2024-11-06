@@ -2,34 +2,30 @@
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 
 contract ZfiScript is Script {
-    address GOV_ADDRESS;
+    address ADMIN_ADDRESS;
     address PROXY;
-    uint256 deployerPrivateKey;
 
     function setUp() public {
-        GOV_ADDRESS = vm.envAddress("GOV_ADDRESS");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
     }
 
     function run() public {
-        
-        vm.startBroadcast(deployerPrivateKey);
-        //TODO: fix the deployement via openzeppelin Upgrades
-        // address proxy = Upgrades.deployUUPSProxy(
-        // "ZFIToken.sol",
-        // abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS)));
-
-        // In the meantime, unsafe deployment:
+        vm.startBroadcast();
         address ZFITokenImplementation = address(new ZFIToken());
-        PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (GOV_ADDRESS))));
-        //export ZFY_TOKEN_IMPLEMENTATION = ZFITokenImplementation;
+        PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (ADMIN_ADDRESS))));
         console2.log("Token address is: ");
         console2.log(PROXY);
+        //TODO: add mints here using (Merkledrop mint is in MerkleDrop script)
+        // mintToken(ADMIN_ADDRESS, 1 ether);
         vm.stopBroadcast();
+    }
+
+    function mintToken(address _to, uint256 _amount) internal {
+        ZFIToken token = ZFIToken(PROXY);
+        token.mint(_to, _amount);
     }
 }
