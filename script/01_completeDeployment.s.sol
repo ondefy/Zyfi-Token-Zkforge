@@ -115,5 +115,9 @@ contract ZfiStakingScript is Script {
         Vester(vester).setGov(GOV_ADDRESS);
         // RewardRouterV2
         RewardRouterV2(rewardRouterV2).setGov(GOV_ADDRESS);
+        // ZYFI token:
+        ZFIToken(ZFI).grantRole(ZFIToken(ZFI).PAUSER_ROLE, ADMIN_ADDRESS);
+        ZFIToken(ZFI).grantRole(ZFIToken(ZFI).MINTER_ROLE, ADMIN_ADDRESS);
+        ZFIToken(ZFI).grantRole(ZFIToken(ZFI).DEFAULT_ADMIN_ROLE, ADMIN_ADDRESS);
     }
 }
