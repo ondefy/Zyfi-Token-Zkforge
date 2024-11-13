@@ -15,6 +15,4 @@ contract ZFIToken is ERC20MinterPauserPermitUpgradeable {
         super.initialize("ToToro Test Token", "TTT2");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
-
-    
 }

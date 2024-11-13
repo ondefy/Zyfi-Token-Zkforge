@@ -55,6 +55,8 @@ contract Vester_Tester is Test {
         vm.stopPrank();
     }
 
+    //TODO: hasRewardTracker
+
     function test_setGov() public setGov(TEAM_ADDRESS) {
         address owner = vester.gov();
         assertEq(owner, TEAM_ADDRESS);
@@ -263,4 +265,21 @@ contract Vester_Tester is Test {
         assertEq(sumRewards, claimedBalance);
     }
 
+    //TODO: getTotalVested (interesting)
+
+    //TODO: getMaxVestableAmount
+
+    //TODO: setBonusRewards
+
+    //TODO: setCumulativeRewardDeductions
+
+    //TODO: setTransferredCumulativeRewards
+
+    //TODO: transferStakeValues
+
+    //TODO: rescueFunds
+
+    //TODO: claimForAccount (interesting)
+
+    //TODO: setHasMaxVestableAmount
 }
