@@ -15,6 +15,4 @@ contract ZFIToken is ERC20MinterPauserPermitUpgradeable {
         super.initialize("Zyfi Token", "ZFI");
         _grantRole(DEFAULT_ADMIN_ROLE, _ONDEFYDAO);
     }
-
-    
 }
