@@ -18,6 +18,7 @@ contract GovernanceScript is Script {
     }
 
     function run() public { //TODO: Governor parameters and Timelock aren't ready for production!!!!!
+    // TODO: https://wizard.openzeppelin.com/#governor
         vm.startBroadcast();
         // Deploy the Timelock
         /**
