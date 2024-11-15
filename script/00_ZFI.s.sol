@@ -19,8 +19,6 @@ contract ZfiScript is Script {
         PROXY = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (ADMIN_ADDRESS))));
         console2.log("Token address is: ");
         console2.log(PROXY);
-        //TODO: add mints here using (Merkledrop mint is in MerkleDrop script)
-        // mintToken(ADMIN_ADDRESS, 1 ether);
         vm.stopBroadcast();
     }
 
