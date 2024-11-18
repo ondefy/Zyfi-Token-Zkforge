@@ -14,7 +14,7 @@ contract GovernanceScript is Script {
 
     function setUp() public {
         ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
-        token = IVotes(vm.envAddress("ZFI_ADDRESS"));
+        token = IVotes(vm.envAddress("STZFI_ADDRESS"));
     }
 
     function run() public { //TODO: Governor parameters and Timelock aren't ready for production!!!!!
@@ -35,7 +35,7 @@ contract GovernanceScript is Script {
      * this admin to the deployer automatically and should be renounced as well.
      */
         address[] memory proposers = new address[](1);
-        proposers[0] = ADMIN_ADDRESS;
+        proposers[0] = ADMIN_ADDRESS;//TODO: put the address of the proposer
         address[] memory executors = new address[](1);
         executors[0] = ADMIN_ADDRESS;
     
