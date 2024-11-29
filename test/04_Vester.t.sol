@@ -151,7 +151,7 @@ contract Vester_Tester is Test {
         assertEq(sumRewards, claimedBalance);
     }
 
-    //TODO: deposit in Vester and claim after 2, 3 and 6 months
+    // deposit in Vester and claim after 2, 3 and 6 months
     function test_deposit_MultipleClaims() public setGov(TEAM_ADDRESS){
         uint256 transferredCumulativeRewards = 70 ether;
         uint256 bonusRewards = 0 ether;
@@ -263,6 +263,75 @@ contract Vester_Tester is Test {
         assertEq(0, vesterBalance);
         claimedBalance = zfiToken.balanceOf(USER1);
         assertEq(sumRewards, claimedBalance);
+    }
+
+    function testMultipleDepositsAndClaims() public {
+        uint256 firstDeposit = 100 ether;
+        uint256 secondDeposit = 100 ether;
+
+        deal(address(zfiToken), USER1, firstDeposit+secondDeposit);
+        // deposit in rewardTracker
+        vm.startPrank(USER1);
+        zfiToken.approve(address(rewardTracker), firstDeposit+secondDeposit);
+        rewardTracker.stake(firstDeposit+secondDeposit);
+
+        // USER deposits 100 tokens in the Vester
+        vm.startPrank(USER1);
+            rewardTracker.approve(address(vester), firstDeposit);
+            vester.deposit(firstDeposit);
+        vm.stopPrank();
+        assertEq(vester.balanceOf(USER1), firstDeposit);
+
+        // Wait for half a week
+        vm.warp(block.timestamp + vestingDuration / 2);
+
+        // Check claimable amount
+        uint256 claimable = vester.claimable(USER1);
+        assertApproxEqRel(claimable, firstDeposit / 2, 1e16); // Allow small precision error
+
+        // Claim the vested tokens
+        vm.startPrank(USER1);
+        vester.claim();
+        vm.stopPrank();
+        assertEq(zfiToken.balanceOf(USER1), claimable);
+
+        // Deposit another 100 tokens
+        vm.startPrank(USER1);
+        rewardTracker.approve(address(vester), secondDeposit);
+        vester.deposit(secondDeposit);
+        vm.stopPrank();
+        assertEq(vester.balanceOf(USER1), firstDeposit + secondDeposit - claimable);
+
+        // Wait for another half week
+        vm.warp(block.timestamp + vestingDuration / 2);
+
+        // Check claimable amount again
+        claimable = vester.claimable(USER1);
+        uint256 expectedClaimable = (firstDeposit + secondDeposit) / 2;
+        assertApproxEqRel(claimable, expectedClaimable, 1e16);
+
+        // Claim the vested tokens
+        vm.startPrank(USER1);
+        vester.claim();
+        vm.stopPrank();
+        assertEq(zfiToken.balanceOf(USER1), claimable + firstDeposit / 2);
+
+        // Wait for another half week
+        vm.warp(block.timestamp + vestingDuration / 2);
+
+        // Check claimable amount again
+        claimable = vester.claimable(USER1);
+        assertApproxEqRel(claimable, secondDeposit / 4, 1e16);
+
+        // Claim the remaining tokens
+        vm.startPrank(USER1);
+        vester.claim();
+        vm.stopPrank();
+        assertEq(zfiToken.balanceOf(USER1), firstDeposit + secondDeposit);
+
+        // Ensure no further tokens can be claimed
+        claimable = vester.claimable(USER1);
+        assertEq(claimable, 0);
     }
 
     //TODO: getTotalVested (interesting)
