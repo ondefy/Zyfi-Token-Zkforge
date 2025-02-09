@@ -10,4 +10,4 @@ solc_version = "0.8.22"
 compile = true
 fallback_oz = true
 mode = '3'
-zksolc = "1.4.1"
+zksolc = "1.5.7"
