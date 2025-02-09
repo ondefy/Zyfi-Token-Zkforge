@@ -8,7 +8,7 @@ import {ZFIToken} from "../src/ZFI/ZFIToken.sol";
 import {ZFITokenV2} from "../src/ZFI/ZFITokenV2.sol";
 
 contract ZFINewImplementation_test is Test {
-    address TEAM_ADDRESS = 0x336044E117fA0e786eE1A58b4a54a9969AA288De;
+    address ADMIN_ADDRESS = 0x336044E117fA0e786eE1A58b4a54a9969AA288De;
     address DEPLOYER_ADDRESS = 0xA47dF9473fF4084BA4d11271cA8a470361D77a09;
     address USER1 = makeAddr("USER1");
     ZFIToken zfiToken = ZFIToken(0x5d0d7BCa050e2E98Fd4A5e8d3bA823B49f39868d);
@@ -18,22 +18,22 @@ contract ZFINewImplementation_test is Test {
         deal(DEPLOYER_ADDRESS, 2 ether);
         newImplementation = address(new ZFITokenV2());
         // upgrade
-        vm.startPrank(TEAM_ADDRESS);
+        vm.startPrank(ADMIN_ADDRESS);
         zfiToken.upgradeToAndCall(newImplementation, abi.encodeWithSignature("setName(string)", ("ZyFAI Token")));
         vm.stopPrank();
     }
 
     // function deploy_ZFI() public returns(address ZFI_proxy_address){
     //     address ZFITokenImplementation = address(new ZFIToken());
-    //     ZFI_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (TEAM_ADDRESS))));
+    //     ZFI_proxy_address = address(new ERC1967Proxy(ZFITokenImplementation, abi.encodeCall(ZFIToken.initialize2, (ADMIN_ADDRESS))));
     // }
 
     function test_RemoveAdminRole() public {
-        vm.deal(TEAM_ADDRESS, 2 ether);
-        vm.startPrank(TEAM_ADDRESS);
+        vm.deal(ADMIN_ADDRESS, 2 ether);
+        vm.startPrank(ADMIN_ADDRESS);
         zfiToken.revokeRole(zfiToken.DEFAULT_ADMIN_ROLE(), DEPLOYER_ADDRESS);
         vm.stopPrank();
-        assertTrue(zfiToken.hasRole(zfiToken.DEFAULT_ADMIN_ROLE(), TEAM_ADDRESS));
+        assertTrue(zfiToken.hasRole(zfiToken.DEFAULT_ADMIN_ROLE(), ADMIN_ADDRESS));
         assertFalse(zfiToken.hasRole(zfiToken.DEFAULT_ADMIN_ROLE(), DEPLOYER_ADDRESS));
     }
 
@@ -45,14 +45,14 @@ contract ZFINewImplementation_test is Test {
     }
 
     function test_Pause() public {
-        vm.startPrank(TEAM_ADDRESS);
+        vm.startPrank(ADMIN_ADDRESS);
         zfiToken.revokeRole(zfiToken.DEFAULT_ADMIN_ROLE(), DEPLOYER_ADDRESS);
         zfiToken.revokeRole(zfiToken.PAUSER_ROLE(), DEPLOYER_ADDRESS);
         vm.startPrank(DEPLOYER_ADDRESS);
         zfiToken.mint(USER1, 10 ether);
         vm.stopPrank();
-        vm.startPrank(TEAM_ADDRESS);
-        zfiToken.grantRole(zfiToken.PAUSER_ROLE(), TEAM_ADDRESS);
+        vm.startPrank(ADMIN_ADDRESS);
+        zfiToken.grantRole(zfiToken.PAUSER_ROLE(), ADMIN_ADDRESS);
         zfiToken.pause();
         vm.stopPrank();
         vm.startPrank(USER1);
@@ -61,7 +61,7 @@ contract ZFINewImplementation_test is Test {
     }
 
     function test_Upgrade() public {
-        vm.startPrank(TEAM_ADDRESS);
+        vm.startPrank(ADMIN_ADDRESS);
         zfiToken.revokeRole(zfiToken.DEFAULT_ADMIN_ROLE(), DEPLOYER_ADDRESS);        address newImplem =  address(new ZFIToken());
         bytes memory data = "";
         zfiToken.upgradeToAndCall(newImplem, data);
