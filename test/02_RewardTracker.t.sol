@@ -91,7 +91,7 @@ contract RewardTracker_Tester is Test {
         address handler = makeAddr("handler");
         vm.startPrank(TEAM_ADDRESS);
         rewardTracker.setHandler(handler, true);
-        rewardTracker.setInPrivateTransferMode(true);
+        rewardTracker.setPrivateMode(RewardTracker.Mode.Transfer, true);
         assertEq(zfiToken.balanceOf(user), 0);
         vm.startPrank(user);
         vm.expectRevert();
@@ -160,7 +160,7 @@ contract RewardTracker_Tester is Test {
         address handler = makeAddr("handler");
         vm.startPrank(TEAM_ADDRESS);
         rewardTracker.setHandler(handler, true);
-        rewardTracker.setInPrivateClaimingMode(true);
+        rewardTracker.setPrivateMode(RewardTracker.Mode.Claiming, true);
         assertEq(zfiToken.balanceOf(USER1), 0);
         vm.startPrank(USER1);
         deal(address(zfiToken), USER1, amount);
@@ -183,7 +183,7 @@ contract RewardTracker_Tester is Test {
         address handler = makeAddr("handler");
         vm.startPrank(TEAM_ADDRESS);
         rewardTracker.setHandler(handler, true);
-        rewardTracker.setInPrivateStakingMode(true);
+        rewardTracker.setPrivateMode(RewardTracker.Mode.Staking, true);
         assertEq(zfiToken.balanceOf(USER1), 0);
         vm.startPrank(USER1);
         deal(address(zfiToken), USER1, 1 ether);
