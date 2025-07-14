@@ -69,7 +69,7 @@ contract ZfiStakingScript is Script {
         Vester(vester).setHasMaxVestableAmount(HAS_MAX_VESTABLE_AMOUNT);
 
         // To avoid stZFI being tranferable: set RewardTracker in privateTransferMode
-        RewardTracker(rewardTracker).setInPrivateTransferMode(true);
+        RewardTracker(rewardTracker).setPrivateMode(RewardTracker.Mode.Transfer, true);
 
         // Set the Admin and Gov rights
         transferAdminAndGovRights();
