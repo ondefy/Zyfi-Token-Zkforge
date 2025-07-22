@@ -32,7 +32,7 @@ contract ZfiStakingScript is Script {
         HAS_MAX_VESTABLE_AMOUNT = vm.envBool("HAS_MAX_VESTABLE_AMOUNT"); // set to be false
 
         // set a duration period (6 months)
-        vestingDuration = 26 weeks;
+        vestingDuration = 13 weeks;
     }
 
     function run() public {
@@ -116,9 +116,9 @@ contract ZfiStakingScript is Script {
         // RewardRouterV2
         RewardRouterV2(rewardRouterV2).setGov(GOV_ADDRESS);
         // ZYFI token:
-        ZFIToken(ZFI).grantRole(ZFIToken(ZFI).PAUSER_ROLE(), ADMIN_ADDRESS);
-        // keep the Minter role to myself
-        // ZFIToken(ZFI).grantRole(ZFIToken(ZFI).MINTER_ROLE(), ADMIN_ADDRESS);
-        ZFIToken(ZFI).grantRole(ZFIToken(ZFI).DEFAULT_ADMIN_ROLE(), GOV_ADDRESS);
+        // ZFIToken(ZFI).grantRole(ZFIToken(ZFI).PAUSER_ROLE(), ADMIN_ADDRESS);
+        // // keep the Minter role to myself
+        // // ZFIToken(ZFI).grantRole(ZFIToken(ZFI).MINTER_ROLE(), ADMIN_ADDRESS);
+        // ZFIToken(ZFI).grantRole(ZFIToken(ZFI).DEFAULT_ADMIN_ROLE(), GOV_ADDRESS);
     }
 }
