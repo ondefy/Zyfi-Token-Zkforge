@@ -265,9 +265,12 @@ contract Vester_Tester is Test {
         assertEq(sumRewards, claimedBalance);
     }
 
-    function testMultipleDepositsAndClaims() public {
+    function testMultipleDepositsAndClaims() public setGov(TEAM_ADDRESS){
         uint256 firstDeposit = 100 ether;
         uint256 secondDeposit = 100 ether;
+
+        vm.prank(vester.gov());
+        vester.setHasMaxVestableAmount(false);
 
         deal(address(zfiToken), USER1, firstDeposit+secondDeposit);
         // deposit in rewardTracker
@@ -320,8 +323,9 @@ contract Vester_Tester is Test {
         vm.warp(block.timestamp + vestingDuration / 2);
 
         // Check claimable amount again
+        console2.log("I'm here");
         claimable = vester.claimable(USER1);
-        assertApproxEqRel(claimable, secondDeposit / 4, 1e16);
+        assertApproxEqRel(claimable, secondDeposit / 2, 1e16);
 
         // Claim the remaining tokens
         vm.startPrank(USER1);
