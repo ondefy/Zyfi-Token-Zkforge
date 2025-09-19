@@ -338,6 +338,168 @@ contract Vester_Tester is Test {
         assertEq(claimable, 0);
     }
 
+    function test_withdraw() public setGov(TEAM_ADDRESS) {
+    uint256 depositAmount = 100 ether;
+    
+    // Setup: Give user tokens and stake them
+    deal(address(zfiToken), USER1, depositAmount);
+    vm.startPrank(USER1);
+    zfiToken.approve(address(rewardTracker), depositAmount);
+    rewardTracker.stake(depositAmount);
+    vm.stopPrank();
+    
+    // Disable max vestable amount for simplicity
+    vm.prank(TEAM_ADDRESS);
+    vester.setHasMaxVestableAmount(false);
+    
+    // User deposits into vester
+    vm.startPrank(USER1);
+    rewardTracker.approve(address(vester), depositAmount);
+    vester.deposit(depositAmount);
+    vm.stopPrank();
+    
+    // Verify initial state
+    assertEq(vester.balanceOf(USER1), depositAmount);
+    assertEq(vester.cumulativeClaimAmounts(USER1), 0);
+    
+    // Wait for partial vesting (half the duration)
+    vm.warp(block.timestamp + vestingDuration / 2);
+    
+    // Claim some tokens first to test withdraw with mixed state
+    vm.startPrank(USER1);
+    uint256 claimedAmount = vester.claim();
+    vm.stopPrank();
+    
+    // Verify partial claim
+    uint256 expectedClaimedAmount = depositAmount / 2; // Half vested
+    assertApproxEqRel(claimedAmount, expectedClaimedAmount, 1e16); // 1% tolerance
+    assertEq(zfiToken.balanceOf(USER1), claimedAmount);
+    assertEq(vester.cumulativeClaimAmounts(USER1), claimedAmount);
+    
+    // Record state before withdraw
+    uint256 remainingBalance = vester.balanceOf(USER1);
+    uint256 cumulativeClaimed = vester.cumulativeClaimAmounts(USER1);
+    uint256 userZfiBalanceBefore = zfiToken.balanceOf(USER1);
+    uint256 userStakedAmountBefore = rewardTracker.stakedAmounts(USER1);
+    
+    // Perform withdraw
+    vm.startPrank(USER1);
+    vester.withdraw();
+    vm.stopPrank();
+    
+    // Verify withdraw effects
+    // 1. Vester balance should be zero
+    assertEq(vester.balanceOf(USER1), 0);
+    
+    // 2. Cumulative claim amounts should be reset
+    assertEq(vester.cumulativeClaimAmounts(USER1), 0);
+    
+    // 3. Claimed amounts should be reset
+    assertEq(vester.claimedAmounts(USER1), 0);
+    
+    // 4. Last vesting times should be reset
+    assertEq(vester.lastVestingTimes(USER1), 0);
+    
+    // 5. User should receive additional claimable tokens in their wallet
+    uint256 additionalClaimed = vester.claimable(USER1); // This should be 0 after withdraw
+    assertEq(additionalClaimed, 0);
+    
+    // 6. User's ZFI balance should increase by any remaining claimable amount
+    // Note: withdraw() calls _claim internally before staking
+    uint256 userZfiBalanceAfter = zfiToken.balanceOf(USER1);
+    assertTrue(userZfiBalanceAfter >= userZfiBalanceBefore);
+    
+    // 7. Remaining balance should be staked in reward tracker
+    uint256 userStakedAmountAfter = rewardTracker.stakedAmounts(USER1);
+    assertEq(userStakedAmountAfter, userStakedAmountBefore + remainingBalance);
+}
+
+function test_withdraw_FullyVested() public setGov(TEAM_ADDRESS) {
+    uint256 depositAmount = 50 ether;
+    
+    // Setup
+    deal(address(zfiToken), USER1, depositAmount);
+    vm.startPrank(USER1);
+    zfiToken.approve(address(rewardTracker), depositAmount);
+    rewardTracker.stake(depositAmount);
+    vm.stopPrank();
+    
+    vm.prank(TEAM_ADDRESS);
+    vester.setHasMaxVestableAmount(false);
+    
+    // Deposit
+    vm.startPrank(USER1);
+    rewardTracker.approve(address(vester), depositAmount);
+    vester.deposit(depositAmount);
+    vm.stopPrank();
+    
+    // Wait for full vesting
+    vm.warp(block.timestamp + vestingDuration + 1);
+    
+    uint256 userStakedBefore = rewardTracker.stakedAmounts(USER1);
+    console2.log("userStakedBefore");
+    console2.log(userStakedBefore);
+    uint256 claimableBefore = vester.claimable(USER1);
+    assertEq(claimableBefore, depositAmount); // Fully claimable
+    
+    // Withdraw
+    vm.startPrank(USER1);
+    vester.claim();
+    vm.expectRevert();
+    vester.withdraw();
+    vm.stopPrank();
+    
+    // Verify all tokens were claimed and none restaked (since balance was 0)
+    assertEq(zfiToken.balanceOf(USER1), depositAmount);
+    assertEq(rewardTracker.stakedAmounts(USER1), userStakedBefore); // No change in staking
+    assertEq(vester.balanceOf(USER1), 0);
+}
+
+function test_withdraw_NoVestedAmount_ShouldRevert() public setGov(TEAM_ADDRESS) {
+    // Try to withdraw without any deposit
+    vm.startPrank(USER1);
+    vm.expectRevert("Vester: vested amount is zero");
+    vester.withdraw();
+    vm.stopPrank();
+}
+
+function test_withdraw_OnlyUnvestedBalance() public setGov(TEAM_ADDRESS) {
+    uint256 depositAmount = 80 ether;
+    
+    // Setup
+    deal(address(zfiToken), USER1, depositAmount);
+    vm.startPrank(USER1);
+    zfiToken.approve(address(rewardTracker), depositAmount);
+    rewardTracker.stake(depositAmount);
+    vm.stopPrank();
+    
+    vm.prank(TEAM_ADDRESS);
+    vester.setHasMaxVestableAmount(false);
+    
+    // Deposit
+    vm.startPrank(USER1);
+    rewardTracker.approve(address(vester), depositAmount);
+    vester.deposit(depositAmount);
+    vm.stopPrank();
+    
+    // Withdraw immediately (no vesting time passed)
+    uint256 userStakedBefore = rewardTracker.stakedAmounts(USER1);
+    
+    vm.startPrank(USER1);
+    vester.withdraw();
+    vm.stopPrank();
+    
+    // Should have no ZFI tokens (nothing was claimable)
+    assertEq(zfiToken.balanceOf(USER1), 0);
+    
+    // All deposited amount should be restaked
+    assertEq(rewardTracker.stakedAmounts(USER1), userStakedBefore + depositAmount);
+    
+    // Vester state should be cleared
+    assertEq(vester.balanceOf(USER1), 0);
+    assertEq(vester.cumulativeClaimAmounts(USER1), 0);
+}
+
     //TODO: getTotalVested (interesting)
 
     //TODO: getMaxVestableAmount
