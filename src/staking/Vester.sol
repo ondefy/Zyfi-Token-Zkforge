@@ -131,7 +131,7 @@ contract Vester is IVester, IERC20, ReentrancyGuard, Governable {
         require(totalVested > 0, "Vester: vested amount is zero");
 
         // stake the ZFI token for the user
-
+        IERC20(claimableToken).approve(rewardTracker, balance);
         IRewardTracker(rewardTracker).stakeForAccount(address(this), _receiver, balance);
         _burn(account, balance);
 
