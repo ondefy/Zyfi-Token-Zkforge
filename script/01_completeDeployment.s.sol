@@ -31,8 +31,8 @@ contract ZfiStakingScript is Script {
         ADMIN_ADDRESS = vm.envAddress("ADMIN_ADDRESS");
         HAS_MAX_VESTABLE_AMOUNT = vm.envBool("HAS_MAX_VESTABLE_AMOUNT"); // set to be false
 
-        // set a duration period (6 months)
-        vestingDuration = 13 weeks;
+        // set a duration period (2 weeks)
+        vestingDuration = 2 weeks;
     }
 
     function run() public {
