@@ -5,9 +5,3 @@ libs = ["lib"]
 build_info = true
 solc_version = "0.8.22"
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-
-[profile.default.zksync]
-compile = true
-fallback_oz = true
-mode = '3'
-zksolc = "1.5.7"
